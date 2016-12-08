@@ -11,6 +11,7 @@ import android.util.Log;
 import com.liguang.imageloaderdemo.bean.ItemBean;
 import com.liguang.imageloaderdemo.config.AppConfig;
 import com.liguang.imageloaderdemo.data.ItemsRepository;
+import com.liguang.imageloaderdemo.data.ItemsRepositoryRxJava;
 import com.liguang.imageloaderdemo.db.GankIoContract;
 import com.liguang.imageloaderdemo.util.Utils;
 
@@ -19,24 +20,30 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ItemsPresenter implements ItemsContract.Presenter,
+import rx.Observable;
+import rx.Subscriber;
+import rx.android.schedulers.AndroidSchedulers;
+import rx.functions.Func1;
+import rx.schedulers.Schedulers;
+
+public class ItemsPresenterRxJava implements ItemsContract.Presenter,
         ItemsRepository.GetItemsCallback, LoaderManager.LoaderCallbacks<Cursor> {
-    private static final String TAG = "ItemsPresenter";
+    private static final String TAG = "ItemsPresenterRxJava";
     Context mContext;
     //high level
     ItemsContract.View mView;
     //low level
-    ItemsRepository mRepository;
+    ItemsRepositoryRxJava mRepository;
     LoaderManager mLoaderManager;
     private String mType;
     private static final int ITEMS_LOADER = 1;
-    private int mPage = 0;
+    private int mPage = 1;
 
-    public ItemsPresenter() {
+    public ItemsPresenterRxJava() {
 
     }
 
-    public ItemsPresenter(Context context, ItemsContract.View view, ItemsRepository repository, LoaderManager loaderManager, String type) {
+    public ItemsPresenterRxJava(Context context, ItemsContract.View view, ItemsRepositoryRxJava repository, LoaderManager loaderManager, String type) {
         mContext = context;
         mView = view;
         mRepository = repository;
@@ -47,12 +54,55 @@ public class ItemsPresenter implements ItemsContract.Presenter,
 
     @Override
     public void start() {
+        Log.d(TAG, "start: ");
         loadItems();
     }
 
     public void loadItems() {
         mView.showLoading(true);
-        mRepository.getItems(mType, mPage, this);
+        //下层负责创建Observable
+        Observable<List<ItemBean>> observable = mRepository.getItems(mType, mPage);
+        observable
+                .flatMap(new Func1<List<ItemBean>, Observable<ItemBean>>() {
+                    @Override
+                    public Observable<ItemBean> call(List<ItemBean> beanList) {
+                        return Observable.from(beanList);
+                    }
+                })
+                .map(new Func1<ItemBean, ItemBean>() {
+                    @Override
+                    public ItemBean call(ItemBean itemBean) {
+                        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+                        try {
+                            itemBean.publishedAt = sdf.format(sdf.parse(itemBean.publishedAt));
+                        } catch (ParseException e) {
+                            e.printStackTrace();
+                        }
+                        return itemBean;
+                    }
+                })
+                .toList()
+                .subscribeOn(Schedulers.computation())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(new Subscriber<List<ItemBean>>() {
+                    @Override
+                    public void onCompleted() {
+                        Log.d(TAG, "onCompleted: type = " + mType + " page = " + mPage);
+                        mView.showLoading(false);
+                    }
+
+                    @Override
+                    public void onError(Throwable e) {
+
+                    }
+
+                    @Override
+                    public void onNext(List<ItemBean> beanList) {
+                        //这里应该会有两步：1. 数据库 2.网络
+                        Log.d(TAG, "onNext: ");
+                        mView.showItems(beanList);
+                    }
+                });
     }
 
     @Override

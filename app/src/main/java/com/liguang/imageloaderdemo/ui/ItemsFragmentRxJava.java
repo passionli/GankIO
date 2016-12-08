@@ -44,8 +44,8 @@ import butterknife.ButterKnife;
 import butterknife.OnClick;
 import butterknife.Unbinder;
 
-public class ItemsFragment extends Fragment implements ItemsContract.View {
-    private static final String TAG = "ItemsFragment";
+public class ItemsFragmentRxJava extends Fragment implements ItemsContract.View {
+    private static final String TAG = "ItemsFragmentRxJava";
     private static final String EXTRA_TAG = "extra_tag";
     @BindView(R.id.swipeRefreshLayout)
     SwipeRefreshLayout mSwipeRefreshLayout;
@@ -64,11 +64,11 @@ public class ItemsFragment extends Fragment implements ItemsContract.View {
     ItemsContract.Presenter mPresenter;
     public List<ItemBean> mData;
 
-    public ItemsFragment() {
+    public ItemsFragmentRxJava() {
     }
 
-    public static ItemsFragment newInstance(String tag) {
-        ItemsFragment fragment = new ItemsFragment();
+    public static ItemsFragmentRxJava newInstance(String tag) {
+        ItemsFragmentRxJava fragment = new ItemsFragmentRxJava();
         Bundle args = new Bundle();
         args.putString(EXTRA_TAG, tag);
         fragment.setArguments(args);
@@ -83,12 +83,13 @@ public class ItemsFragment extends Fragment implements ItemsContract.View {
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Log.d(TAG, "onCreate: ");
         if (getArguments() != null) {
             String type = getArguments().getString(EXTRA_TAG);
             mImageWidth = LGViewUtils.getScreenWidth(getContext()) - LGViewUtils.dp2px(getContext(), 46);
             mImageHeight = LGViewUtils.dp2px(getContext(), 225);
-//            mPresenter = new ItemsPresenter(getContext(), this, Injection.provideTasksRepository(getContext().getApplicationContext()),
-//                    getActivity().getSupportLoaderManager(), type);
+            mPresenter = new ItemsPresenterRxJava(getContext(), this, Injection.provideTasksRepository(getContext().getApplicationContext()),
+                    getActivity().getSupportLoaderManager(), type);
         }
     }
 
@@ -181,6 +182,7 @@ public class ItemsFragment extends Fragment implements ItemsContract.View {
 
     @Override
     public void showItems(List<ItemBean> beanList) {
+        Log.d(TAG, "showItems: ");
         int newItemCount = 0;
         //merge array
         if (mData == null) {

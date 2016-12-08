@@ -14,27 +14,11 @@ import okhttp3.Response;
  */
 public class HttpManager {
     private static volatile HttpManager sInstance;
-    OkHttpHL httpHL = new OkHttpHL();
-    String prefix = "http://gank.io/api/data/";
-
-    OkHttpClient client = new OkHttpClient();
-
-    //Android/10/1
-    public Call reqData(String tag, int pageCount, int page, Callback callback) {
-        //create json
-        //call low level
-        String result = null;
-        try {
-            return httpHL.run(prefix + tag + "/" + pageCount + "/" + page, callback);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return null;
-    }
+    OkHttpClient mClient = new OkHttpClient();
 
     public String doGet(String url) {
         Request request = new Request.Builder().url(url).build();
-        Call call = client.newCall(request);
+        Call call = mClient.newCall(request);
         try {
             Response response = call.execute();
             return response.body().string();

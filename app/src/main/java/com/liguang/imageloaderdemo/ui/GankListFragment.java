@@ -7,6 +7,7 @@ import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentStatePagerAdapter;
 import android.support.v4.view.ViewPager;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -14,7 +15,7 @@ import android.view.ViewGroup;
 import com.liguang.imageloaderdemo.R;
 
 public class GankListFragment extends Fragment {
-    public static final String TAG = GankListFragment.class.getSimpleName();
+    public static final String TAG = "GankListFragment";
     private static final String KEY_TAB = "key_tab";
     private TabLayout mIndicator;
     private ViewPager mViewPager;
@@ -27,8 +28,8 @@ public class GankListFragment extends Fragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Log.d(TAG, "onCreate: ");
     }
-
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -69,7 +70,7 @@ public class GankListFragment extends Fragment {
         @Override
         public Fragment getItem(int position) {
             //复用,Lazy Fragment
-            return ItemListFragment.newInstance(mTags[position]);
+            return ItemsFragmentRxJava.newInstance(mTags[position]);
         }
 
         @Override
