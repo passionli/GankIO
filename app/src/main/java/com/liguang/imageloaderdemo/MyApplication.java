@@ -19,6 +19,7 @@ public class MyApplication extends Application {
     @Override
     public void onCreate() {
         super.onCreate();
+        com.liguang.imageloaderdemo.album.Utils.enableStrictMode();
         Utils.copyDB2SDCard(this);
 
         ImagePipelineConfig imagePipelineConfig = ImagePipelineConfig.newBuilder(getApplicationContext())

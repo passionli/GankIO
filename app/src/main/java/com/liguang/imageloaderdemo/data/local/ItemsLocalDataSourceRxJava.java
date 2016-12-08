@@ -28,8 +28,6 @@ import com.liguang.imageloaderdemo.data.ItemsDataSourceRxJava;
 import com.liguang.imageloaderdemo.db.GankIoContract;
 import com.liguang.imageloaderdemo.util.Utils;
 
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -81,43 +79,41 @@ public class ItemsLocalDataSourceRxJava implements ItemsDataSourceRxJava {
 
     private List<ItemBean> cursor2List(Cursor cursor) {
         List<ItemBean> results = new ArrayList<>();
-        if (cursor == null || !cursor.moveToFirst()) {
-            return results;
-        }
-
         try {
-            do {
-                ItemBean bean = new ItemBean();
-                bean._id = cursor
-                        .getString(cursor
-                                .getColumnIndex(GankIoContract.Item.SERVER_ID));
-                bean.createdAt = cursor
-                        .getString(cursor
-                                .getColumnIndex(GankIoContract.Item.CREATEDAT));
-                bean.desc = cursor
-                        .getString(cursor
-                                .getColumnIndex(GankIoContract.Item.DESC));
-                bean.images = Utils.string2Array(cursor.getString(cursor
-                        .getColumnIndex(GankIoContract.Item.IMAGES)));
-                bean.publishedAt = cursor.getString(cursor
-                        .getColumnIndex(GankIoContract.Item.PUBLISHEDAT));
-                bean.source = cursor
-                        .getString(cursor
-                                .getColumnIndex(GankIoContract.Item.SOURCE));
-                bean.type = cursor
-                        .getString(cursor
-                                .getColumnIndex(GankIoContract.Item.TYPE));
-                bean.url = cursor
-                        .getString(cursor
-                                .getColumnIndex(GankIoContract.Item.URL));
-                bean.used = cursor
-                        .getInt(cursor
-                                .getColumnIndex(GankIoContract.Item.USED)) == 1;
-                bean.who = cursor
-                        .getString(cursor
-                                .getColumnIndex(GankIoContract.Item.WHO));
-                results.add(bean);
-            } while (cursor.moveToNext());
+            if (cursor.moveToFirst()) {
+                do {
+                    ItemBean bean = new ItemBean();
+                    bean._id = cursor
+                            .getString(cursor
+                                    .getColumnIndex(GankIoContract.Item.SERVER_ID));
+                    bean.createdAt = cursor
+                            .getString(cursor
+                                    .getColumnIndex(GankIoContract.Item.CREATEDAT));
+                    bean.desc = cursor
+                            .getString(cursor
+                                    .getColumnIndex(GankIoContract.Item.DESC));
+                    bean.images = Utils.string2Array(cursor.getString(cursor
+                            .getColumnIndex(GankIoContract.Item.IMAGES)));
+                    bean.publishedAt = cursor.getString(cursor
+                            .getColumnIndex(GankIoContract.Item.PUBLISHEDAT));
+                    bean.source = cursor
+                            .getString(cursor
+                                    .getColumnIndex(GankIoContract.Item.SOURCE));
+                    bean.type = cursor
+                            .getString(cursor
+                                    .getColumnIndex(GankIoContract.Item.TYPE));
+                    bean.url = cursor
+                            .getString(cursor
+                                    .getColumnIndex(GankIoContract.Item.URL));
+                    bean.used = cursor
+                            .getInt(cursor
+                                    .getColumnIndex(GankIoContract.Item.USED)) == 1;
+                    bean.who = cursor
+                            .getString(cursor
+                                    .getColumnIndex(GankIoContract.Item.WHO));
+                    results.add(bean);
+                } while (cursor.moveToNext());
+            }
         } finally {
             cursor.close();
         }

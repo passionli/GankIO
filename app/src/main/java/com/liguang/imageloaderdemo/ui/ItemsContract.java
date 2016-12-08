@@ -12,9 +12,13 @@ public class ItemsContract {
         void showLoading(boolean display);
 
         void showItems(List<ItemBean> beanList);
+
+        void showNoItems();
+
+        void showRecyclerView(boolean display);
     }
 
     interface Presenter extends BasePresenter {
-        void loadItems();
+        void loadItems(boolean forceUpdate);
     }
 }

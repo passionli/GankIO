@@ -1,69 +1,70 @@
 package com.liguang.imageloaderdemo.ui;
 
 import android.content.Context;
-import android.database.Cursor;
-import android.os.Bundle;
-import android.support.v4.app.LoaderManager;
-import android.support.v4.content.CursorLoader;
-import android.support.v4.content.Loader;
 import android.util.Log;
 
 import com.liguang.imageloaderdemo.bean.ItemBean;
-import com.liguang.imageloaderdemo.config.AppConfig;
-import com.liguang.imageloaderdemo.data.ItemsRepository;
 import com.liguang.imageloaderdemo.data.ItemsRepositoryRxJava;
-import com.liguang.imageloaderdemo.db.GankIoContract;
-import com.liguang.imageloaderdemo.util.Utils;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.List;
 
 import rx.Observable;
 import rx.Subscriber;
+import rx.Subscription;
 import rx.android.schedulers.AndroidSchedulers;
 import rx.functions.Action0;
 import rx.functions.Func1;
 import rx.schedulers.Schedulers;
+import rx.subscriptions.CompositeSubscription;
 
-public class ItemsPresenterRxJava implements ItemsContract.Presenter,
-        ItemsRepository.GetItemsCallback, LoaderManager.LoaderCallbacks<Cursor> {
+public class ItemsPresenterRxJava implements ItemsContract.Presenter {
     private static final String TAG = "ItemsPresenterRxJava";
     Context mContext;
-    //high level
+    /**
+     * 上层View
+     */
     ItemsContract.View mView;
-    //low level
+    /**
+     * 底层Model
+     */
     ItemsRepositoryRxJava mRepository;
-    LoaderManager mLoaderManager;
+    /**
+     * 类型，如"Android","iOS","前端"
+     */
     private String mType;
-    private static final int ITEMS_LOADER = 1;
+    /**
+     * 当前页
+     */
     private int mPage = 1;
+
+    private CompositeSubscription mSubscriptions;
+    private boolean mFirstLoad = true;
 
     public ItemsPresenterRxJava() {
 
     }
 
-    public ItemsPresenterRxJava(Context context, ItemsContract.View view, ItemsRepositoryRxJava repository, LoaderManager loaderManager, String type) {
+    public ItemsPresenterRxJava(Context context, ItemsContract.View view, ItemsRepositoryRxJava repository, String type) {
         mContext = context;
         mView = view;
         mRepository = repository;
-        mLoaderManager = loaderManager;
         mType = type;
         mView.setPresenter(this);
+        mSubscriptions = new CompositeSubscription();
     }
 
-    @Override
-    public void start() {
-        Log.d(TAG, "start: ");
-        loadItems();
-    }
-
-    public void loadItems() {
+    public void loadItems(boolean forceUpdate) {
+        mPage++;
+        if (forceUpdate || mFirstLoad) {
+            mPage = 1;
+        }
+        mFirstLoad = false;
         mView.showLoading(true);
+        mSubscriptions.clear();
         //下层负责创建Observable
-        Observable<List<ItemBean>> observable = mRepository.getItems(mType, mPage);
-        observable
+        Subscription subscription = mRepository.getItems(mType, mPage)
                 .flatMap(new Func1<List<ItemBean>, Observable<ItemBean>>() {
                     @Override
                     public Observable<ItemBean> call(List<ItemBean> beanList) {
@@ -107,112 +108,33 @@ public class ItemsPresenterRxJava implements ItemsContract.Presenter,
                     public void onNext(List<ItemBean> beanList) {
                         //这里应该会有两步：1. 数据库 2.网络
                         Log.d(TAG, "onNext: ");
-                        mView.showItems(beanList);
+                        processItems(beanList);
                     }
                 });
+        mSubscriptions.add(subscription);
     }
 
-    @Override
-    public void onItemsLoaded(List<ItemBean> items) {
-        //这里不需要关心输入，只是收到下层(远端数据源)的回调消息,真正的数据从本地数据库拿
-        if (mLoaderManager.getLoader(ITEMS_LOADER) == null) {
-//            Bundle args = new Bundle();
-//            args.putInt("page", 2);
-            mLoaderManager.initLoader(ITEMS_LOADER, null, this);
+    private void processItems(List<ItemBean> beanList) {
+        if (beanList.isEmpty()) {
+            processEmptyItems();
         } else {
-            mLoaderManager.restartLoader(ITEMS_LOADER, null, this);
+            mView.showRecyclerView(true);
+            mView.showItems(beanList);
         }
     }
 
-    @Override
-    public void onDataNotAvailable() {
-
+    private void processEmptyItems() {
+        mView.showNoItems();
     }
 
     @Override
-    public Loader<Cursor> onCreateLoader(int id, Bundle args) {
-        Log.d(TAG, "onCreateLoader: ");
-        return new CursorLoader(mContext,
-                GankIoContract.Item.buildItemUri(mType, AppConfig.NETWORK_DATA_PAGE_COUNT, mPage),
-                null, null, null, GankIoContract.Item.PUBLISHEDAT + " desc ");
+    public void subscribe() {
+        loadItems(false);
     }
 
     @Override
-    public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
-        Log.d(TAG, "onLoadFinished: ");
-        if (data != null) {
-            if (data.moveToLast()) {
-                onDataLoaded(data);
-            } else {
-                onDataEmpty();
-            }
-        } else {
-            onDataNotAvailable();
-        }
-    }
-
-    private void onDataLoaded(Cursor cursor) {
-        List<ItemBean> results = new ArrayList<>(cursor.getCount());
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
-        cursor.moveToFirst();
-        do {
-            ItemBean bean = new ItemBean();
-            bean._id = cursor
-                    .getString(cursor
-                            .getColumnIndex(GankIoContract.Item.SERVER_ID));
-            bean.createdAt = cursor
-                    .getString(cursor
-                            .getColumnIndex(GankIoContract.Item.CREATEDAT));
-            bean.desc = cursor
-                    .getString(cursor
-                            .getColumnIndex(GankIoContract.Item.DESC));
-            bean.images = Utils.string2Array(cursor.getString(cursor
-                    .getColumnIndex(GankIoContract.Item.IMAGES)));
-            bean.publishedAt = cursor.getString(cursor
-                    .getColumnIndex(GankIoContract.Item.PUBLISHEDAT));
-
-            //为UI做处理
-            try {
-                bean.publishedAt = sdf.format(sdf.parse(bean.publishedAt));
-            } catch (ParseException e) {
-                e.printStackTrace();
-            }
-
-            bean.source = cursor
-                    .getString(cursor
-                            .getColumnIndex(GankIoContract.Item.SOURCE));
-            bean.type = cursor
-                    .getString(cursor
-                            .getColumnIndex(GankIoContract.Item.TYPE));
-            bean.url = cursor
-                    .getString(cursor
-                            .getColumnIndex(GankIoContract.Item.URL));
-            bean.used = cursor
-                    .getInt(cursor
-                            .getColumnIndex(GankIoContract.Item.USED)) == 1;
-            bean.who = cursor
-                    .getString(cursor
-                            .getColumnIndex(GankIoContract.Item.WHO));
-            results.add(bean);
-        } while (cursor.moveToNext());
-
-
-        if (mView != null) {
-            mView.showLoading(false);
-            mView.showItems(results);
-        }
-    }
-
-    private void onDataEmpty() {
-
-    }
-
-    @Override
-    public void onLoaderReset(Loader<Cursor> loader) {
-        onDataReset();
-    }
-
-    private void onDataReset() {
-
+    public void unsubscribe() {
+        //clear reference avoid memory leak
+        mSubscriptions.clear();
     }
 }

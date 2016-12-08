@@ -63,6 +63,7 @@ public class ItemsFragmentRxJava extends Fragment implements ItemsContract.View 
      */
     ItemsContract.Presenter mPresenter;
     public List<ItemBean> mData;
+    private boolean mNoMoreData;
 
     public ItemsFragmentRxJava() {
     }
@@ -89,7 +90,7 @@ public class ItemsFragmentRxJava extends Fragment implements ItemsContract.View 
             mImageWidth = LGViewUtils.getScreenWidth(getContext()) - LGViewUtils.dp2px(getContext(), 46);
             mImageHeight = LGViewUtils.dp2px(getContext(), 225);
             mPresenter = new ItemsPresenterRxJava(getContext(), this, Injection.provideTasksRepository(getContext().getApplicationContext()),
-                    getActivity().getSupportLoaderManager(), type);
+                    type);
         }
     }
 
@@ -108,7 +109,7 @@ public class ItemsFragmentRxJava extends Fragment implements ItemsContract.View 
         mSwipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
             public void onRefresh() {
-                mPresenter.loadItems();
+                mPresenter.loadItems(true);
             }
         });
 
@@ -134,7 +135,7 @@ public class ItemsFragmentRxJava extends Fragment implements ItemsContract.View 
                 }
 
                 if (newState == RecyclerView.SCROLL_STATE_IDLE && mLastVisibleItem + 1 == mAdapter.getItemCount()) {
-                    mPresenter.loadItems();
+                    mPresenter.loadItems(false);
                 }
             }
 
@@ -164,7 +165,13 @@ public class ItemsFragmentRxJava extends Fragment implements ItemsContract.View 
     @Override
     public void onResume() {
         super.onResume();
-        mPresenter.start();
+        mPresenter.subscribe();
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        mPresenter.unsubscribe();
     }
 
     @Override
@@ -196,10 +203,21 @@ public class ItemsFragmentRxJava extends Fragment implements ItemsContract.View 
                 }
             }
         }
-//        Toast.makeText(getActivity(), String.format(getString(R.string.item_new_load), newItemCount), Toast.LENGTH_SHORT).show();
         Log.d(TAG, "bindData: " + String.format(getString(R.string.item_new_load), newItemCount));
+        mNoMoreData = (newItemCount == 0);
         //这里应该从ContentProvider加载数据
         mAdapter.notifyDataSetChanged();
+    }
+
+    @Override
+    public void showNoItems() {
+        mNoMoreData = true;
+        mAdapter.notifyDataSetChanged();
+    }
+
+    @Override
+    public void showRecyclerView(boolean display) {
+        mRecyclerView.setVisibility(display ? View.VISIBLE : View.GONE);
     }
 
     private class MyAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
@@ -255,12 +273,16 @@ public class ItemsFragmentRxJava extends Fragment implements ItemsContract.View 
                 viewHolder.publishedAtTv.setText(bean.publishedAt);
             } else if (holder instanceof FooterViewHolder) {
                 FooterViewHolder footerViewHolder = (FooterViewHolder) holder;
-                if (mLoading) {
-                    footerViewHolder.progressBar.setVisibility(View.VISIBLE);
-                    footerViewHolder.loadMoreTv.setText(R.string.loading);
+                if (mNoMoreData) {
+
                 } else {
-                    footerViewHolder.progressBar.setVisibility(View.GONE);
-                    footerViewHolder.loadMoreTv.setText(R.string.loadMore);
+                    if (mLoading) {
+                        footerViewHolder.progressBar.setVisibility(View.VISIBLE);
+                        footerViewHolder.loadMoreTv.setText(R.string.loading);
+                    } else {
+                        footerViewHolder.progressBar.setVisibility(View.GONE);
+                        footerViewHolder.loadMoreTv.setText(R.string.loadMore);
+                    }
                 }
             }
         }
