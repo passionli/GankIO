@@ -23,6 +23,7 @@ import java.util.List;
 import rx.Observable;
 import rx.Subscriber;
 import rx.android.schedulers.AndroidSchedulers;
+import rx.functions.Action0;
 import rx.functions.Func1;
 import rx.schedulers.Schedulers;
 
@@ -84,6 +85,12 @@ public class ItemsPresenterRxJava implements ItemsContract.Presenter,
                 .toList()
                 .subscribeOn(Schedulers.computation())
                 .observeOn(AndroidSchedulers.mainThread())
+                .doOnCompleted(new Action0() {
+                    @Override
+                    public void call() {
+                        Log.d(TAG, "call: doOnCompleted load local database if needed?");
+                    }
+                })
                 .subscribe(new Subscriber<List<ItemBean>>() {
                     @Override
                     public void onCompleted() {
