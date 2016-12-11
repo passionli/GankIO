@@ -19,26 +19,26 @@ package com.liguang.imageloaderdemo.util;
 import android.content.Context;
 import android.support.annotation.NonNull;
 
-import com.liguang.imageloaderdemo.data.ItemsDataSourceRxJava;
-import com.liguang.imageloaderdemo.data.ItemsRepositoryRxJava;
-import com.liguang.imageloaderdemo.data.local.ItemsLocalDataSourceRxJava;
-import com.liguang.imageloaderdemo.data.remote.ItemsRemoteDataSourceRxJava;
+import com.liguang.imageloaderdemo.data.ItemsDataSource;
+import com.liguang.imageloaderdemo.data.ItemsRepository;
+import com.liguang.imageloaderdemo.data.local.ItemsLocalDataSource;
+import com.liguang.imageloaderdemo.data.remote.ItemsRemoteDataSource;
 
 import static com.facebook.common.internal.Preconditions.checkNotNull;
 
 public class Injection {
 
-    public static ItemsRepositoryRxJava provideTasksRepository(Context context) {
-        return ItemsRepositoryRxJava.getInstance(provideRemoteDataSource(), provideLocalDataSource(context));
+    public static ItemsRepository provideTasksRepository(Context context) {
+        return ItemsRepository.getInstance(provideRemoteDataSource(), provideLocalDataSource(context));
     }
 
-    public static ItemsDataSourceRxJava provideRemoteDataSource() {
-        return ItemsRemoteDataSourceRxJava.getInstance();
+    public static ItemsDataSource provideRemoteDataSource() {
+        return ItemsRemoteDataSource.getInstance();
     }
 
-    public static ItemsDataSourceRxJava provideLocalDataSource(@NonNull Context context) {
+    public static ItemsDataSource provideLocalDataSource(@NonNull Context context) {
         checkNotNull(context);
-        return ItemsLocalDataSourceRxJava.getInstance(context.getContentResolver());
+        return ItemsLocalDataSource.getInstance(context.getContentResolver());
     }
 
 }

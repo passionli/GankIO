@@ -9,13 +9,20 @@ import java.util.List;
 public class ItemsContract {
     interface View extends BaseView<Presenter> {
 
-        void showLoading(boolean display);
+        void showFooterLoading();
+        void hideFooterLoading();
+
+        void showHeaderRefreshing();
+        void hideHeaderRefreshing();
 
         void showItems(List<ItemBean> beanList);
 
-        void showNoItems();
+        void showNoMoreItems();
 
-        void showRecyclerView(boolean display);
+        void showError();
+
+        void showRecyclerView();
+        void hideRecyclerView();
     }
 
     interface Presenter extends BasePresenter {

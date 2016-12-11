@@ -24,7 +24,7 @@ import android.util.Log;
 
 import com.liguang.imageloaderdemo.bean.ItemBean;
 import com.liguang.imageloaderdemo.config.AppConfig;
-import com.liguang.imageloaderdemo.data.ItemsDataSourceRxJava;
+import com.liguang.imageloaderdemo.data.ItemsDataSource;
 import com.liguang.imageloaderdemo.db.GankIoContract;
 import com.liguang.imageloaderdemo.util.Utils;
 
@@ -41,22 +41,22 @@ import static com.facebook.common.internal.Preconditions.checkNotNull;
 /**
  * Concrete implementation of a data source as a db.
  */
-public class ItemsLocalDataSourceRxJava implements ItemsDataSourceRxJava {
+public class ItemsLocalDataSource implements ItemsDataSource {
     private static final String TAG = "ItemsLocalDataSourceRxJ";
 
-    private static ItemsLocalDataSourceRxJava INSTANCE;
+    private static ItemsLocalDataSource INSTANCE;
 
     private ContentResolver mContentResolver;
 
     // Prevent direct instantiation.
-    private ItemsLocalDataSourceRxJava(@NonNull ContentResolver contentResolver) {
+    private ItemsLocalDataSource(@NonNull ContentResolver contentResolver) {
         checkNotNull(contentResolver);
         mContentResolver = contentResolver;
     }
 
-    public static ItemsLocalDataSourceRxJava getInstance(@NonNull ContentResolver contentResolver) {
+    public static ItemsLocalDataSource getInstance(@NonNull ContentResolver contentResolver) {
         if (INSTANCE == null) {
-            INSTANCE = new ItemsLocalDataSourceRxJava(contentResolver);
+            INSTANCE = new ItemsLocalDataSource(contentResolver);
         }
         return INSTANCE;
     }
@@ -73,6 +73,7 @@ public class ItemsLocalDataSourceRxJava implements ItemsDataSourceRxJava {
                                 null, null, null, GankIoContract.Item.PUBLISHEDAT + " desc ");
                 subscriber.onNext(cursor2List(cursor));
                 subscriber.onCompleted();
+                Log.d(TAG, "call: exit read database");
             }
         }).subscribeOn(Schedulers.io());
     }

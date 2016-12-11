@@ -7,13 +7,11 @@ import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v4.view.PagerAdapter;
 import android.support.v4.view.ViewPager;
-import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.widget.DividerItemDecoration;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.text.TextUtils;
 import android.util.Log;
-import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -22,6 +20,11 @@ import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
+import com.aspsine.irecyclerview.IRecyclerView;
+import com.aspsine.irecyclerview.OnLoadMoreListener;
+import com.aspsine.irecyclerview.OnRefreshListener;
+import com.aspsine.irecyclerview.demo.ui.widget.footer.LoadMoreFooterView;
+import com.aspsine.irecyclerview.demo.ui.widget.header.ClassicRefreshHeaderView;
 import com.facebook.drawee.backends.pipeline.Fresco;
 import com.facebook.drawee.generic.GenericDraweeHierarchy;
 import com.facebook.drawee.generic.GenericDraweeHierarchyBuilder;
@@ -37,6 +40,7 @@ import com.liguang.imageloaderdemo.bean.ItemBean;
 import com.liguang.imageloaderdemo.network.URLHelper;
 import com.liguang.imageloaderdemo.util.Injection;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import butterknife.BindView;
@@ -44,32 +48,27 @@ import butterknife.ButterKnife;
 import butterknife.OnClick;
 import butterknife.Unbinder;
 
-public class ItemsFragmentRxJava extends Fragment implements ItemsContract.View {
-    private static final String TAG = "ItemsFragmentRxJava";
+public class ItemsFragment extends Fragment implements ItemsContract.View {
+    private static final String TAG = "ItemsFragment";
     private static final String EXTRA_TAG = "extra_tag";
-    @BindView(R.id.swipeRefreshLayout)
-    SwipeRefreshLayout mSwipeRefreshLayout;
-    @BindView(R.id.recyclerView)
-    protected RecyclerView mRecyclerView;
+    @BindView(R.id.iRecyclerView)
+    protected IRecyclerView mRecyclerView;
+    private LoadMoreFooterView mLoadMoreFooterView;
     private LinearLayoutManager mLayoutManager;
     private MyAdapter mAdapter;
-    private boolean mLoading;
     private int mImageWidth;
     private int mImageHeight;
     Unbinder mUnbinder;
-    private int mLastVisibleItem;
     /**
      * Low level
      */
     ItemsContract.Presenter mPresenter;
-    public List<ItemBean> mData;
-    private boolean mNoMoreData;
 
-    public ItemsFragmentRxJava() {
+    public ItemsFragment() {
     }
 
-    public static ItemsFragmentRxJava newInstance(String tag) {
-        ItemsFragmentRxJava fragment = new ItemsFragmentRxJava();
+    public static ItemsFragment newInstance(String tag) {
+        ItemsFragment fragment = new ItemsFragment();
         Bundle args = new Bundle();
         args.putString(EXTRA_TAG, tag);
         fragment.setArguments(args);
@@ -89,7 +88,7 @@ public class ItemsFragmentRxJava extends Fragment implements ItemsContract.View 
             String type = getArguments().getString(EXTRA_TAG);
             mImageWidth = LGViewUtils.getScreenWidth(getContext()) - LGViewUtils.dp2px(getContext(), 46);
             mImageHeight = LGViewUtils.dp2px(getContext(), 225);
-            mPresenter = new ItemsPresenterRxJava(getContext(), this, Injection.provideTasksRepository(getContext().getApplicationContext()),
+            mPresenter = new ItemsPresenter(getContext(), this, Injection.provideTasksRepository(getContext().getApplicationContext()),
                     type);
         }
     }
@@ -104,27 +103,28 @@ public class ItemsFragmentRxJava extends Fragment implements ItemsContract.View 
 
     @Override
     public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
-        super.onViewCreated(view, savedInstanceState);
+        Log.d(TAG, "onViewCreated: ");
         mUnbinder = ButterKnife.bind(this, view);
-        mSwipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
-            @Override
-            public void onRefresh() {
-                mPresenter.loadItems(true);
-            }
-        });
-
-        mSwipeRefreshLayout.setProgressBackgroundColorSchemeResource(android.R.color.white);
-        mSwipeRefreshLayout.setColorSchemeResources(android.R.color.holo_blue_light,
-                android.R.color.holo_red_light, android.R.color.holo_orange_light,
-                android.R.color.holo_green_light);
-        mSwipeRefreshLayout.setProgressViewOffset(false, 0, (int) TypedValue
-                .applyDimension(TypedValue.COMPLEX_UNIT_DIP, 24, getResources()
-                        .getDisplayMetrics()));
-
-        mRecyclerView = (RecyclerView) view.findViewById(R.id.recyclerView);
         mLayoutManager = new LinearLayoutManager(getActivity());
         mAdapter = new MyAdapter();
         mRecyclerView.setLayoutManager(mLayoutManager);
+        mLoadMoreFooterView = (LoadMoreFooterView) mRecyclerView.getLoadMoreFooterView();
+
+        mRecyclerView.setOnRefreshListener(new OnRefreshListener() {
+            @Override
+            public void onRefresh() {
+                Log.d(TAG, "onRefresh: ");
+                mPresenter.loadItems(true);
+            }
+        });
+        mRecyclerView.setOnLoadMoreListener(new OnLoadMoreListener() {
+            @Override
+            public void onLoadMore() {
+                Log.d(TAG, "onLoadMore: ");
+                mPresenter.loadItems(false);
+            }
+        });
+
         mRecyclerView.setOnScrollListener(new RecyclerView.OnScrollListener() {
             @Override
             public void onScrollStateChanged(RecyclerView recyclerView, int newState) {
@@ -133,16 +133,11 @@ public class ItemsFragmentRxJava extends Fragment implements ItemsContract.View 
                 } else {
                     Fresco.getImagePipeline().pause();
                 }
-
-                if (newState == RecyclerView.SCROLL_STATE_IDLE && mLastVisibleItem + 1 == mAdapter.getItemCount()) {
-                    mPresenter.loadItems(false);
-                }
             }
 
             @Override
             public void onScrolled(RecyclerView recyclerView, int dx, int dy) {
                 super.onScrolled(recyclerView, dx, dy);
-                mLastVisibleItem = mLayoutManager.findLastVisibleItemPosition();
             }
         });
         DividerItemDecoration itemDecoration = new DividerItemDecoration(mRecyclerView.getContext(),
@@ -158,7 +153,7 @@ public class ItemsFragmentRxJava extends Fragment implements ItemsContract.View 
 
             requestPermissions(perms, permsRequestCode);
         } else {
-            mRecyclerView.setAdapter(mAdapter);
+            mRecyclerView.setIAdapter(mAdapter);
         }
     }
 
@@ -181,54 +176,67 @@ public class ItemsFragmentRxJava extends Fragment implements ItemsContract.View 
     }
 
     @Override
-    public void showLoading(boolean display) {
-        mLoading = display;
-        mSwipeRefreshLayout.setRefreshing(display);
+    public void showFooterLoading() {
+        mLoadMoreFooterView.setStatus(LoadMoreFooterView.Status.LOADING);
     }
 
+    @Override
+    public void hideFooterLoading() {
+        mLoadMoreFooterView.setStatus(LoadMoreFooterView.Status.GONE);
+    }
+
+    @Override
+    public void showHeaderRefreshing() {
+        mRecyclerView.setRefreshing(true);
+    }
+
+    @Override
+    public void hideHeaderRefreshing() {
+        mRecyclerView.setRefreshing(false);
+    }
 
     @Override
     public void showItems(List<ItemBean> beanList) {
         Log.d(TAG, "showItems: ");
-        int newItemCount = 0;
-        //merge array
-        if (mData == null) {
-            mData = beanList;
-            newItemCount = beanList.size();
-        } else {
-            for (ItemBean bean : beanList) {
-                if (!mData.contains(bean)) {
-                    mData.add(bean);
-                    newItemCount++;
-                }
-            }
-        }
-        Log.d(TAG, "bindData: " + String.format(getString(R.string.item_new_load), newItemCount));
-        mNoMoreData = (newItemCount == 0);
-        //这里应该从ContentProvider加载数据
-        mAdapter.notifyDataSetChanged();
+        mAdapter.swapData(beanList);
     }
 
     @Override
-    public void showNoItems() {
-        mNoMoreData = true;
-        mAdapter.notifyDataSetChanged();
+    public void showNoMoreItems() {
+        mLoadMoreFooterView.setStatus(LoadMoreFooterView.Status.THE_END);
     }
 
     @Override
-    public void showRecyclerView(boolean display) {
-        mRecyclerView.setVisibility(display ? View.VISIBLE : View.GONE);
+    public void showError() {
+        mLoadMoreFooterView.setStatus(LoadMoreFooterView.Status.ERROR);
+    }
+
+    @Override
+    public void showRecyclerView() {
+
+    }
+
+    @Override
+    public void hideRecyclerView() {
+
     }
 
     private class MyAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         private static final int TYPE_ITEM = 0;
-        private static final int TYPE_FOOTER = 1;
+        //        private static final int TYPE_FOOTER = 1;
         LayoutInflater mInflater;
         private int mTitlePaddingTop;
+        public List<ItemBean> mData;
 
         public MyAdapter() {
             mInflater = LayoutInflater.from(getContext());
             mTitlePaddingTop = LGViewUtils.dp2px(getContext(), 23);
+            mData = new ArrayList<>();
+        }
+
+        public void swapData(List<ItemBean> data) {
+            mData = data;
+            notifyDataSetChanged();
         }
 
         @Override
@@ -238,12 +246,6 @@ public class ItemsFragmentRxJava extends Fragment implements ItemsContract.View 
                 view.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
                         ViewGroup.LayoutParams.WRAP_CONTENT));
                 return new MyViewHolder(view);
-            }
-            // type == TYPE_FOOTER 返回footerView
-            else if (viewType == TYPE_FOOTER) {
-                View view = mInflater.inflate(R.layout.footerview, null);
-                view.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
-                return new FooterViewHolder(view);
             }
             return null;
         }
@@ -271,38 +273,25 @@ public class ItemsFragmentRxJava extends Fragment implements ItemsContract.View 
                     viewHolder.whoTv.setVisibility(View.GONE);
                 }
                 viewHolder.publishedAtTv.setText(bean.publishedAt);
-            } else if (holder instanceof FooterViewHolder) {
-                FooterViewHolder footerViewHolder = (FooterViewHolder) holder;
-                if (mNoMoreData) {
-
-                } else {
-                    if (mLoading) {
-                        footerViewHolder.progressBar.setVisibility(View.VISIBLE);
-                        footerViewHolder.loadMoreTv.setText(R.string.loading);
-                    } else {
-                        footerViewHolder.progressBar.setVisibility(View.GONE);
-                        footerViewHolder.loadMoreTv.setText(R.string.loadMore);
-                    }
-                }
             }
         }
 
         @Override
         public int getItemCount() {
             if (mData != null)
-                return mData.size() + 1;
+                return mData.size();
             else
-                return 1;
+                return 0;
         }
 
         @Override
         public int getItemViewType(int position) {
             // 最后一个item设置为footerView
-            if (position + 1 == getItemCount()) {
-                return TYPE_FOOTER;
-            } else {
-                return TYPE_ITEM;
-            }
+//            if (position + 1 == getItemCount()) {
+//                return TYPE_FOOTER;
+//            } else {
+            return TYPE_ITEM;
+//            }
         }
     }
 
@@ -322,8 +311,6 @@ public class ItemsFragmentRxJava extends Fragment implements ItemsContract.View 
         public MyViewHolder(View itemView) {
             super(itemView);
             ButterKnife.bind(this, itemView);
-//            adapter = new ImagePagerAdapter();
-//            viewPager.setAdapter(adapter);
         }
 
         @OnClick(R.id.container)
@@ -335,7 +322,7 @@ public class ItemsFragmentRxJava extends Fragment implements ItemsContract.View 
         }
     }
 
-    class FooterViewHolder extends RecyclerView.ViewHolder {
+    class FooterViewHolder {
         @BindView(R.id.container)
         FrameLayout container;
         @BindView(R.id.progressBar)
@@ -344,7 +331,6 @@ public class ItemsFragmentRxJava extends Fragment implements ItemsContract.View 
         TextView loadMoreTv;
 
         public FooterViewHolder(View view) {
-            super(view);
             ButterKnife.bind(this, view);
         }
     }
@@ -368,12 +354,6 @@ public class ItemsFragmentRxJava extends Fragment implements ItemsContract.View 
         public boolean isViewFromObject(View view, Object object) {
             return view == object;
         }
-
-//        public void setData(String[] imageUrls) {
-//            mImageUrls = imageUrls;
-//            notifyDataSetChanged();
-//        }
-//
 
         @Override
         public Object instantiateItem(ViewGroup container, int position) {

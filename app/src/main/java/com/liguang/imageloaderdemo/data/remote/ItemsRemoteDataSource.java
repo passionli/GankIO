@@ -23,7 +23,7 @@ import com.alibaba.fastjson.JSON;
 import com.liguang.imageloaderdemo.bean.ItemBean;
 import com.liguang.imageloaderdemo.bean.ItemListBean;
 import com.liguang.imageloaderdemo.config.AppConfig;
-import com.liguang.imageloaderdemo.data.ItemsDataSourceRxJava;
+import com.liguang.imageloaderdemo.data.ItemsDataSource;
 import com.liguang.imageloaderdemo.network.HttpManager;
 import com.liguang.imageloaderdemo.network.URLHelper;
 
@@ -36,11 +36,11 @@ import rx.schedulers.Schedulers;
 /**
  * Implementation of the data source as network.
  */
-public class ItemsRemoteDataSourceRxJava implements ItemsDataSourceRxJava {
-    private static final String TAG = "ItemsRemoteDataSourceRxJava";
-    private static ItemsDataSourceRxJava INSTANCE;
+public class ItemsRemoteDataSource implements ItemsDataSource {
+    private static final String TAG = "ItemsRemoteDataSource";
+    private static ItemsDataSource INSTANCE;
 
-    private ItemsRemoteDataSourceRxJava() {
+    private ItemsRemoteDataSource() {
 
     }
 
@@ -53,13 +53,15 @@ public class ItemsRemoteDataSourceRxJava implements ItemsDataSourceRxJava {
                 String jsonData = HttpManager.getInstance().doGet(URLHelper.PREFIX +
                         tag + URLHelper.SEPERATOR + AppConfig.NETWORK_DATA_PAGE_COUNT +
                         URLHelper.SEPERATOR + page);
+                Log.d(TAG, "call: response : " + jsonData);
                 ItemListBean itemListBean = JSON.parseObject(jsonData, ItemListBean.class);
                 if (itemListBean != null && !itemListBean.error) {
                     subscriber.onNext(itemListBean.results);
                     subscriber.onCompleted();
-                }else {
+                } else {
                     subscriber.onError(new Exception("http level error"));
                 }
+                Log.d(TAG, "call: exit http level pull data");
             }
         }).subscribeOn(Schedulers.io());
     }
@@ -69,9 +71,9 @@ public class ItemsRemoteDataSourceRxJava implements ItemsDataSourceRxJava {
         //TODO upload data to network
     }
 
-    public static ItemsDataSourceRxJava getInstance() {
+    public static ItemsDataSource getInstance() {
         if (INSTANCE == null) {
-            INSTANCE = new ItemsRemoteDataSourceRxJava();
+            INSTANCE = new ItemsRemoteDataSource();
         }
         return INSTANCE;
     }

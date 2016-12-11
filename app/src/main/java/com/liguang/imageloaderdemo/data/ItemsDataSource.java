@@ -9,7 +9,7 @@ import java.util.List;
 
 import rx.Observable;
 
-public interface ItemsDataSourceRxJava {
+public interface ItemsDataSource {
 
     Observable<List<ItemBean>> getItems(String tag, int page);
 

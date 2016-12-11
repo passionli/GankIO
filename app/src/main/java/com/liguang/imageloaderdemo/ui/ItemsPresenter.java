@@ -3,8 +3,9 @@ package com.liguang.imageloaderdemo.ui;
 import android.content.Context;
 import android.util.Log;
 
+import com.liguang.imageloaderdemo.R;
 import com.liguang.imageloaderdemo.bean.ItemBean;
-import com.liguang.imageloaderdemo.data.ItemsRepositoryRxJava;
+import com.liguang.imageloaderdemo.data.ItemsRepository;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -14,13 +15,12 @@ import rx.Observable;
 import rx.Subscriber;
 import rx.Subscription;
 import rx.android.schedulers.AndroidSchedulers;
-import rx.functions.Action0;
 import rx.functions.Func1;
 import rx.schedulers.Schedulers;
 import rx.subscriptions.CompositeSubscription;
 
-public class ItemsPresenterRxJava implements ItemsContract.Presenter {
-    private static final String TAG = "ItemsPresenterRxJava";
+public class ItemsPresenter implements ItemsContract.Presenter {
+    private static final String TAG = "ItemsPresenter";
     Context mContext;
     /**
      * 上层View
@@ -29,7 +29,7 @@ public class ItemsPresenterRxJava implements ItemsContract.Presenter {
     /**
      * 底层Model
      */
-    ItemsRepositoryRxJava mRepository;
+    ItemsRepository mRepository;
     /**
      * 类型，如"Android","iOS","前端"
      */
@@ -41,12 +41,14 @@ public class ItemsPresenterRxJava implements ItemsContract.Presenter {
 
     private CompositeSubscription mSubscriptions;
     private boolean mFirstLoad = true;
+    private List<ItemBean> mData;
+    private int mNewItemCount;
 
-    public ItemsPresenterRxJava() {
+    public ItemsPresenter() {
 
     }
 
-    public ItemsPresenterRxJava(Context context, ItemsContract.View view, ItemsRepositoryRxJava repository, String type) {
+    public ItemsPresenter(Context context, ItemsContract.View view, ItemsRepository repository, String type) {
         mContext = context;
         mView = view;
         mRepository = repository;
@@ -56,13 +58,23 @@ public class ItemsPresenterRxJava implements ItemsContract.Presenter {
     }
 
     public void loadItems(boolean forceUpdate) {
+        Log.d(TAG, "loadItems: forceUpdate = " + forceUpdate);
         mPage++;
         if (forceUpdate || mFirstLoad) {
             mPage = 1;
         }
         mFirstLoad = false;
-        mView.showLoading(true);
+
+        if (forceUpdate) {
+            //头部显示正在加载
+            mView.showHeaderRefreshing();
+        }
+        if (mPage != 1) {
+            mView.showFooterLoading();
+        }
+
         mSubscriptions.clear();
+        mNewItemCount = 0;
         //下层负责创建Observable
         Subscription subscription = mRepository.getItems(mType, mPage)
                 .flatMap(new Func1<List<ItemBean>, Observable<ItemBean>>() {
@@ -86,22 +98,23 @@ public class ItemsPresenterRxJava implements ItemsContract.Presenter {
                 .toList()
                 .subscribeOn(Schedulers.computation())
                 .observeOn(AndroidSchedulers.mainThread())
-                .doOnCompleted(new Action0() {
-                    @Override
-                    public void call() {
-                        Log.d(TAG, "call: doOnCompleted load local database if needed?");
-                    }
-                })
                 .subscribe(new Subscriber<List<ItemBean>>() {
                     @Override
                     public void onCompleted() {
                         Log.d(TAG, "onCompleted: type = " + mType + " page = " + mPage);
-                        mView.showLoading(false);
+                        mView.hideHeaderRefreshing();
+                        if (mNewItemCount == 0) {
+                            //此次无新数据，UI显示没有更多数据了？
+                            mView.showNoMoreItems();
+                        } else {
+                            mView.hideFooterLoading();
+                        }
                     }
 
                     @Override
                     public void onError(Throwable e) {
-
+                        Log.d(TAG, "onError: " + e.toString());
+                        mView.showError();
                     }
 
                     @Override
@@ -118,22 +131,38 @@ public class ItemsPresenterRxJava implements ItemsContract.Presenter {
         if (beanList.isEmpty()) {
             processEmptyItems();
         } else {
-            mView.showRecyclerView(true);
-            mView.showItems(beanList);
+            //merge array
+            if (mData == null) {
+                mData = beanList;
+                mNewItemCount = beanList.size();
+            } else {
+                for (ItemBean bean : beanList) {
+                    if (!mData.contains(bean)) {
+                        mData.add(bean);
+                        mNewItemCount++;
+                    }
+                }
+            }
+            Log.d(TAG, "bindData: " + String.format(mContext.getString(R.string.item_new_load), mNewItemCount));
+//            mNoMoreData = (mNewItemCount == 0);
+            mView.showRecyclerView();
+            mView.showItems(mData);
         }
     }
 
     private void processEmptyItems() {
-        mView.showNoItems();
+        mView.showNoMoreItems();
     }
 
     @Override
     public void subscribe() {
+        Log.d(TAG, "subscribe: ");
         loadItems(false);
     }
 
     @Override
     public void unsubscribe() {
+        Log.d(TAG, "unsubscribe: ");
         //clear reference avoid memory leak
         mSubscriptions.clear();
     }

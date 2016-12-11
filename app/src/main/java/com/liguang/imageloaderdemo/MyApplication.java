@@ -9,10 +9,10 @@ import com.facebook.drawee.backends.pipeline.Fresco;
 import com.facebook.imagepipeline.core.ImagePipelineConfig;
 import com.github.moduth.blockcanary.BlockCanary;
 import com.github.moduth.blockcanary.BlockCanaryContext;
-import com.liguang.imageloaderdemo.album.LightWeightWorker;
 import com.liguang.imageloaderdemo.util.Utils;
 
 public class MyApplication extends Application {
+    private static final String TAG = "MyApplication";
     private static Context sAppContext;
     static BlockCanaryContext sBlockCanaryContext;
 
@@ -21,19 +21,14 @@ public class MyApplication extends Application {
         super.onCreate();
         com.liguang.imageloaderdemo.album.Utils.enableStrictMode();
         Utils.copyDB2SDCard(this);
-
         ImagePipelineConfig imagePipelineConfig = ImagePipelineConfig.newBuilder(getApplicationContext())
                 .setBitmapsConfig(Bitmap.Config.RGB_565)
                 .build();
-//        DraweeConfig draweeConfig = DraweeConfig.newBuilder()
-//
-//                .build();
-        Fresco.initialize(this);
+        Fresco.initialize(this, imagePipelineConfig, null);
         FLog.setMinimumLoggingLevel(FLog.VERBOSE);
         sAppContext = getApplicationContext();
         sBlockCanaryContext = new AppBlockCanaryContext();
         BlockCanary.install(this, sBlockCanaryContext).start();
-        LightWeightWorker.init();
     }
 
     public static Context getAppContext() {

@@ -70,7 +70,7 @@ public class GankListFragment extends Fragment {
         @Override
         public Fragment getItem(int position) {
             //复用,Lazy Fragment
-            return ItemsFragmentRxJava.newInstance(mTags[position]);
+            return ItemsFragment.newInstance(mTags[position]);
         }
 
         @Override
