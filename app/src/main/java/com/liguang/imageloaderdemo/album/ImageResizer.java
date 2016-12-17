@@ -1,11 +1,14 @@
 package com.liguang.imageloaderdemo.album;
 
+import android.content.Context;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.util.Log;
 
 import java.io.FileDescriptor;
+import java.io.IOException;
+import java.io.InputStream;
 
 public class ImageResizer {
     private static final String TAG = ImageResizer.class.getSimpleName();
@@ -30,7 +33,7 @@ public class ImageResizer {
         return BitmapFactory.decodeResource(res, resId, options);
     }
 
-    public int calculateInSampleSize(BitmapFactory.Options options, int reqWidth, int reqHeight) {
+    public static int calculateInSampleSize(BitmapFactory.Options options, int reqWidth, int reqHeight) {
         Log.d(TAG, "calculateInSampleSize: reqWidth=" + reqWidth + " reqHeight=" + reqHeight);
         int inSampleSize = 1;
 
@@ -70,5 +73,17 @@ public class ImageResizer {
     private void addBitmapOptions(BitmapFactory.Options options) {
         options.inMutable = true;
         options.inBitmap = mImageLoader.getBitmapFromReusableSet(options);
+    }
+
+    public static Bitmap decodeBitmapFromAssets(Context context, String fileName, int reqWidth, int reqHeight) throws IOException {
+        InputStream is = context.getAssets().open(fileName);
+        BitmapFactory.Options options = new BitmapFactory.Options();
+        options.inJustDecodeBounds = true;
+        BitmapFactory.decodeStream(is, null, options);
+        options.inSampleSize = calculateInSampleSize(options, reqWidth, reqHeight);
+        options.inJustDecodeBounds = false;
+        //默认开启565颜色模式
+        options.inPreferredConfig = Bitmap.Config.RGB_565;
+        return BitmapFactory.decodeStream(is, null, options);
     }
 }

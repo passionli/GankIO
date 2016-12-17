@@ -7,6 +7,7 @@ import android.graphics.Bitmap;
 import com.facebook.common.logging.FLog;
 import com.facebook.drawee.backends.pipeline.Fresco;
 import com.facebook.imagepipeline.core.ImagePipelineConfig;
+import com.frogermcs.androiddevmetrics.AndroidDevMetrics;
 import com.github.moduth.blockcanary.BlockCanary;
 import com.github.moduth.blockcanary.BlockCanaryContext;
 import com.liguang.imageloaderdemo.util.Utils;
@@ -19,6 +20,10 @@ public class MyApplication extends Application {
     @Override
     public void onCreate() {
         super.onCreate();
+        //Use it only in debug builds
+        if (BuildConfig.DEBUG) {
+            AndroidDevMetrics.initWith(this);
+        }
         com.liguang.imageloaderdemo.album.Utils.enableStrictMode();
         Utils.copyDB2SDCard(this);
         ImagePipelineConfig imagePipelineConfig = ImagePipelineConfig.newBuilder(getApplicationContext())
