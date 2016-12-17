@@ -19,6 +19,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Locale;
 
 public class ItemListDao {
 
@@ -54,7 +55,7 @@ public class ItemListDao {
             if (cursor != null && cursor.moveToFirst()) {
                 ItemListBean itemListBean = new ItemListBean();
                 itemListBean.results = new ArrayList<>(cursor.getCount());
-                SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+                SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.CHINA);
                 do {
                     ItemBean bean = new ItemBean();
                     bean._id = cursor

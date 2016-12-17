@@ -35,10 +35,7 @@ public class AlbumUIFragment extends Fragment {
     private boolean isWifi(Context context) {
         ConnectivityManager cm = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
         NetworkInfo info = cm.getActiveNetworkInfo();
-        if (info != null && info.getType() == ConnectivityManager.TYPE_WIFI) {
-            return true;
-        }
-        return false;
+        return info != null && info.getType() == ConnectivityManager.TYPE_WIFI;
     }
 
     @Override

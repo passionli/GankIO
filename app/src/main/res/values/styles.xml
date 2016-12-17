@@ -12,11 +12,6 @@
 
     <style name="AppThemeDark.FullScreen" parent="@android:style/Theme.Black.NoTitleBar.Fullscreen" />
 
-    <style name="PhotoGridLayout">
-        <item name="android:drawSelectorOnTop">true</item>
-        <item name="android:listSelector">@drawable/photogrid_list_selector</item>
-    </style>
-
     <style name="drawee">
         <item name="android:layout_width">match_parent</item>
         <item name="android:layout_height">match_parent</item>

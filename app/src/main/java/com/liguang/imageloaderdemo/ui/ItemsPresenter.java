@@ -10,6 +10,7 @@ import com.liguang.imageloaderdemo.data.ItemsRepository;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.List;
+import java.util.Locale;
 
 import rx.Observable;
 import rx.Subscriber;
@@ -86,7 +87,7 @@ public class ItemsPresenter implements ItemsContract.Presenter {
                 .map(new Func1<ItemBean, ItemBean>() {
                     @Override
                     public ItemBean call(ItemBean itemBean) {
-                        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+                        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.CHINA);
                         try {
                             itemBean.publishedAt = sdf.format(sdf.parse(itemBean.publishedAt));
                         } catch (ParseException e) {

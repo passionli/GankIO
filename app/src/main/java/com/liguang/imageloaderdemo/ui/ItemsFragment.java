@@ -15,6 +15,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewStub;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
@@ -24,7 +25,6 @@ import com.aspsine.irecyclerview.IRecyclerView;
 import com.aspsine.irecyclerview.OnLoadMoreListener;
 import com.aspsine.irecyclerview.OnRefreshListener;
 import com.aspsine.irecyclerview.demo.ui.widget.footer.LoadMoreFooterView;
-import com.aspsine.irecyclerview.demo.ui.widget.header.ClassicRefreshHeaderView;
 import com.facebook.drawee.backends.pipeline.Fresco;
 import com.facebook.drawee.generic.GenericDraweeHierarchy;
 import com.facebook.drawee.generic.GenericDraweeHierarchyBuilder;
@@ -51,7 +51,9 @@ import butterknife.Unbinder;
 public class ItemsFragment extends Fragment implements ItemsContract.View {
     private static final String TAG = "ItemsFragment";
     private static final String EXTRA_TAG = "extra_tag";
-    @BindView(R.id.iRecyclerView)
+    @BindView(R.id.stub)
+    ViewStub mViewStub;
+//    @BindView(R.id.iRecyclerView)
     protected IRecyclerView mRecyclerView;
     private LoadMoreFooterView mLoadMoreFooterView;
     private LinearLayoutManager mLayoutManager;
@@ -102,9 +104,33 @@ public class ItemsFragment extends Fragment implements ItemsContract.View {
     }
 
     @Override
+    public void setUserVisibleHint(boolean isVisibleToUser) {
+        super.setUserVisibleHint(isVisibleToUser);
+        Log.d(TAG, "setUserVisibleHint: isVisibleToUser=" + isVisibleToUser);
+        if (isVisibleToUser && isResumed()) {
+            onVisible();
+        } else {
+
+        }
+    }
+
+    @Override
     public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
         Log.d(TAG, "onViewCreated: ");
         mUnbinder = ButterKnife.bind(this, view);
+    }
+
+    private void initView() {
+        Log.d(TAG, "initView: ");
+        if (mViewStub == null)
+            return;
+
+        //only initView once
+        mViewStub.inflate();
+        mViewStub = null;
+
+        //butterknife ?
+        mRecyclerView = (IRecyclerView) getView().findViewById(R.id.iRecyclerView);
         mLayoutManager = new LinearLayoutManager(getActivity());
         mAdapter = new MyAdapter();
         mRecyclerView.setLayoutManager(mLayoutManager);
@@ -160,6 +186,15 @@ public class ItemsFragment extends Fragment implements ItemsContract.View {
     @Override
     public void onResume() {
         super.onResume();
+        Log.d(TAG, "onResume: ");
+        if (!getUserVisibleHint())
+            return;
+        onVisible();
+    }
+
+    private void onVisible() {
+        Log.d(TAG, "onVisible: ");
+        initView();
         mPresenter.subscribe();
     }
 
