@@ -10,7 +10,8 @@ import com.facebook.imagepipeline.core.ImagePipelineConfig;
 import com.frogermcs.androiddevmetrics.AndroidDevMetrics;
 import com.github.moduth.blockcanary.BlockCanary;
 import com.github.moduth.blockcanary.BlockCanaryContext;
-import com.liguang.imageloaderdemo.util.Utils;
+import com.liguang.imageloaderdemo.data.ItemsRepository;
+import com.liguang.imageloaderdemo.util.Injection;
 
 public class MyApplication extends Application {
     private static final String TAG = "MyApplication";
@@ -25,7 +26,7 @@ public class MyApplication extends Application {
             AndroidDevMetrics.initWith(this);
         }
         com.liguang.imageloaderdemo.album.Utils.enableStrictMode();
-        Utils.copyDB2SDCard(this);
+//        Utils.copyDB2SDCard(this);
         ImagePipelineConfig imagePipelineConfig = ImagePipelineConfig.newBuilder(getApplicationContext())
                 .setBitmapsConfig(Bitmap.Config.RGB_565)
                 .build();
@@ -34,6 +35,10 @@ public class MyApplication extends Application {
         sAppContext = getApplicationContext();
         sBlockCanaryContext = new AppBlockCanaryContext();
         BlockCanary.install(this, sBlockCanaryContext).start();
+
+        //setup low level
+        ItemsRepository repository = Injection.provideItemsRepository(getApplicationContext());
+        repository.setup();
     }
 
     public static Context getAppContext() {

@@ -29,6 +29,7 @@ import com.liguang.imageloaderdemo.network.URLHelper;
 
 import java.util.List;
 
+import hugo.weaving.DebugLog;
 import rx.Observable;
 import rx.Subscriber;
 import rx.schedulers.Schedulers;
@@ -47,6 +48,7 @@ public class ItemsRemoteDataSource implements ItemsDataSource {
     @Override
     public Observable<List<ItemBean>> getItems(final String tag, final int page) {
         return Observable.create(new Observable.OnSubscribe<List<ItemBean>>() {
+            @DebugLog
             @Override
             public void call(Subscriber<? super List<ItemBean>> subscriber) {
                 Log.d(TAG, "call: enter http level pull data");
@@ -69,6 +71,11 @@ public class ItemsRemoteDataSource implements ItemsDataSource {
     @Override
     public void saveItems(@NonNull List<ItemBean> items) {
         //TODO upload data to network
+    }
+
+    @Override
+    public void refreshItems() {
+
     }
 
     public static ItemsDataSource getInstance() {

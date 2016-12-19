@@ -15,4 +15,5 @@ public interface ItemsDataSource {
 
     void saveItems(@NonNull List<ItemBean> items);
 
+    void refreshItems();
 }

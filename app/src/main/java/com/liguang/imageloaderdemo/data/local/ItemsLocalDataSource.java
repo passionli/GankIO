@@ -32,6 +32,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import hugo.weaving.DebugLog;
 import rx.Observable;
 import rx.Subscriber;
 import rx.schedulers.Schedulers;
@@ -42,7 +43,7 @@ import static com.facebook.common.internal.Preconditions.checkNotNull;
  * Concrete implementation of a data source as a db.
  */
 public class ItemsLocalDataSource implements ItemsDataSource {
-    private static final String TAG = "ItemsLocalDataSourceRxJ";
+    private static final String TAG = "ItemsLocalDataSource";
 
     private static ItemsLocalDataSource INSTANCE;
 
@@ -64,6 +65,7 @@ public class ItemsLocalDataSource implements ItemsDataSource {
     @Override
     public Observable<List<ItemBean>> getItems(final String tag, final int page) {
         return Observable.create(new Observable.OnSubscribe<List<ItemBean>>() {
+            @DebugLog
             @Override
             public void call(Subscriber<? super List<ItemBean>> subscriber) {
                 Log.d(TAG, "call: enter read database");
@@ -78,6 +80,7 @@ public class ItemsLocalDataSource implements ItemsDataSource {
         }).subscribeOn(Schedulers.io());
     }
 
+    @DebugLog
     private List<ItemBean> cursor2List(Cursor cursor) {
         List<ItemBean> results = new ArrayList<>();
         try {
@@ -122,6 +125,7 @@ public class ItemsLocalDataSource implements ItemsDataSource {
         return results;
     }
 
+    @DebugLog
     @Override
     public void saveItems(@NonNull List<ItemBean> items) {
         checkNotNull(items);
@@ -144,5 +148,10 @@ public class ItemsLocalDataSource implements ItemsDataSource {
             valuesArray[i] = values;
         }
         mContentResolver.bulkInsert(GankIoContract.Item.CONTENT_URI, valuesArray);
+    }
+
+    @Override
+    public void refreshItems() {
+
     }
 }

@@ -28,7 +28,7 @@ import static com.facebook.common.internal.Preconditions.checkNotNull;
 
 public class Injection {
 
-    public static ItemsRepository provideTasksRepository(Context context) {
+    public static ItemsRepository provideItemsRepository(Context context) {
         return ItemsRepository.getInstance(provideRemoteDataSource(), provideLocalDataSource(context));
     }
 

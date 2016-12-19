@@ -7,19 +7,27 @@ import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentStatePagerAdapter;
 import android.support.v4.view.ViewPager;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
 import com.liguang.imageloaderdemo.R;
 
+import butterknife.BindView;
+import butterknife.ButterKnife;
+import hugo.weaving.DebugLog;
+
+import static com.liguang.imageloaderdemo.config.AppConfig.TAB_TAG;
+
+@DebugLog
 public class GankListFragment extends Fragment {
     public static final String TAG = "GankListFragment";
     private static final String KEY_TAB = "key_tab";
-    private TabLayout mIndicator;
-    private ViewPager mViewPager;
-    private String[] mTags = {"Android", "iOS", "前端"};
+    @BindView(R.id.tabs)
+    TabLayout mIndicator;
+    @BindView(R.id.viewPager)
+    ViewPager mViewPager;
+    private MyViewPagerAdapter mAdapter;
 
     public GankListFragment() {
         // Required empty public constructor
@@ -28,27 +36,23 @@ public class GankListFragment extends Fragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        Log.d(TAG, "onCreate: ");
+        mAdapter = new MyViewPagerAdapter(getActivity().getSupportFragmentManager());
     }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        // Inflate the layout for this fragment
         return inflater.inflate(R.layout.fragment_gank_main, container, false);
     }
 
     @Override
     public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        mIndicator = (TabLayout) view.findViewById(R.id.tabs);
-        mViewPager = (ViewPager) view.findViewById(R.id.viewPager);
-        mViewPager.setAdapter(new MyViewPager(getActivity().getSupportFragmentManager()));
+        ButterKnife.bind(this, view);
+        mViewPager.setAdapter(mAdapter);
         mIndicator.setupWithViewPager(mViewPager);
-//        mViewPager.setOnPageChangeListener(new TabLayout.TabLayoutOnPageChangeListener(mIndicator));
         mIndicator.addOnTabSelectedListener(new TabLayout.ViewPagerOnTabSelectedListener(mViewPager));
-        mIndicator.setTabMode(TabLayout.MODE_FIXED);
-        mViewPager.setOffscreenPageLimit(mTags.length);
+        mViewPager.setOffscreenPageLimit(TAB_TAG.length);
 
         if (savedInstanceState != null) {
             mViewPager.setCurrentItem(savedInstanceState.getInt(KEY_TAB));
@@ -61,26 +65,28 @@ public class GankListFragment extends Fragment {
         outState.putInt(KEY_TAB, mViewPager.getCurrentItem());
     }
 
-    private class MyViewPager extends FragmentStatePagerAdapter {
+    @DebugLog
+    private class MyViewPagerAdapter extends FragmentStatePagerAdapter {
+        private static final String TAG = "MyViewPagerAdapter";
 
-        public MyViewPager(FragmentManager fm) {
+        public MyViewPagerAdapter(FragmentManager fm) {
             super(fm);
         }
 
         @Override
         public Fragment getItem(int position) {
             //复用,Lazy Fragment
-            return ItemsFragment.newInstance(mTags[position]);
+            return ItemsFragment.newInstance(TAB_TAG[position]);
         }
 
         @Override
         public int getCount() {
-            return mTags.length;
+            return TAB_TAG.length;
         }
 
         @Override
         public CharSequence getPageTitle(int position) {
-            return mTags[position];
+            return TAB_TAG[position];
         }
     }
 }

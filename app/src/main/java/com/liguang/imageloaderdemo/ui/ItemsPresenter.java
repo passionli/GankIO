@@ -60,6 +60,7 @@ public class ItemsPresenter implements ItemsContract.Presenter {
 
     public void loadItems(boolean forceUpdate) {
         Log.d(TAG, "loadItems: forceUpdate = " + forceUpdate);
+
         mPage++;
         if (forceUpdate || mFirstLoad) {
             mPage = 1;
@@ -69,6 +70,7 @@ public class ItemsPresenter implements ItemsContract.Presenter {
         if (forceUpdate) {
             //头部显示正在加载
             mView.showHeaderRefreshing();
+            mRepository.refreshItems();
         }
         if (mPage != 1) {
             mView.showFooterLoading();
@@ -158,7 +160,9 @@ public class ItemsPresenter implements ItemsContract.Presenter {
     @Override
     public void subscribe() {
         Log.d(TAG, "subscribe: ");
-        loadItems(false);
+        //如果Presenter层已经加载过数据，则不需要重复加载
+        if (mFirstLoad)
+            loadItems(false);
     }
 
     @Override

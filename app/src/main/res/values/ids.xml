@@ -2,5 +2,5 @@
 <resources>
 
     <item name="imageloader_uri" type="id"/>
-
+    <item name="viewPager" type="id" />
 </resources>
