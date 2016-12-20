@@ -5,6 +5,7 @@
     <string name="clear_cache_complete_toast">Caches have been cleared</string>
     <string name="allow_zoomed_swiping">Allow swiping while zoomed</string>
     <string name="loading">正在加载...</string>
+    <string name="empty">暂无数据</string>
     <string name="loadMore">加载更多...</string>
     <string name="item_new_load">新增%d条数据</string>
 </resources>

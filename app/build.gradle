@@ -39,4 +39,8 @@ dependencies {
     compile 'io.reactivex:rxjava:1.1.6'
     compile 'com.github.Aspsine:IRecyclerView:0.0.5'
     compile 'com.github.romainguy:ViewServer:017c01cd512cac3ec054d9eee05fc48c5a9d2de'
+
+    debugCompile 'com.squareup.leakcanary:leakcanary-android:1.5'
+    releaseCompile 'com.squareup.leakcanary:leakcanary-android-no-op:1.5'
+    testCompile 'com.squareup.leakcanary:leakcanary-android-no-op:1.5'
 }

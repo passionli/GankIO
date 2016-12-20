@@ -1,5 +1,6 @@
 package com.liguang.imageloaderdemo.ui;
 
+import android.content.Intent;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
@@ -52,6 +53,8 @@ import hugo.weaving.DebugLog;
 public class ItemsFragment extends Fragment implements ItemsContract.View, OnRefreshListener, OnLoadMoreListener {
     private static final String TAG = "ItemsFragment";
     private static final String EXTRA_TAG = "extra_tag";
+    @BindView(R.id.tvEmpty)
+    TextView mEmptyView;
     @BindView(R.id.stub)
     ViewStub mViewStub;
     protected IRecyclerView mRecyclerView;
@@ -66,6 +69,7 @@ public class ItemsFragment extends Fragment implements ItemsContract.View, OnRef
      */
     ItemsContract.Presenter mPresenter;
     private CustomDividerDrawable mDividerDrawable;
+    private boolean mRecyclerViewBusy;
 
     public ItemsFragment() {
     }
@@ -110,8 +114,6 @@ public class ItemsFragment extends Fragment implements ItemsContract.View, OnRef
         Log.d(TAG, "setUserVisibleHint: isVisibleToUser=" + isVisibleToUser);
         if (isVisibleToUser && isResumed()) {
             onVisible();
-        } else {
-
         }
     }
 
@@ -141,14 +143,23 @@ public class ItemsFragment extends Fragment implements ItemsContract.View, OnRef
         mRecyclerView.setOnRefreshListener(this);
         mRecyclerView.setOnLoadMoreListener(this);
         mRecyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
+            public int mLastState;
+
+            @DebugLog
             @Override
             public void onScrollStateChanged(RecyclerView recyclerView, int newState) {
-                //TODO test this!!!
                 if (newState == RecyclerView.SCROLL_STATE_IDLE || newState == RecyclerView.SCROLL_STATE_DRAGGING) {
-                    Fresco.getImagePipeline().resume();
+                    mRecyclerViewBusy = false;
                 } else {
-                    Fresco.getImagePipeline().pause();
+                    mRecyclerViewBusy = true;
                 }
+
+                if (mLastState == RecyclerView.SCROLL_STATE_SETTLING
+                        && newState == RecyclerView.SCROLL_STATE_IDLE) {
+                    //只在从Fling到Idle后，触发最后的一次BindView
+                    mAdapter.notifyDataSetChanged();
+                }
+                mLastState = newState;
             }
 
             @Override
@@ -181,7 +192,6 @@ public class ItemsFragment extends Fragment implements ItemsContract.View, OnRef
 
     @DebugLog
     private void onVisible() {
-        initView();
         mPresenter.subscribe();
     }
 
@@ -231,12 +241,14 @@ public class ItemsFragment extends Fragment implements ItemsContract.View, OnRef
 
     @Override
     public void showError() {
+        initView();
         mLoadMoreFooterView.setStatus(LoadMoreFooterView.Status.ERROR);
     }
 
     @Override
     public void showRecyclerView() {
-
+        mEmptyView.setVisibility(View.GONE);
+        initView();
     }
 
     @Override
@@ -289,7 +301,7 @@ public class ItemsFragment extends Fragment implements ItemsContract.View, OnRef
         public void onBindViewHolder(RecyclerView.ViewHolder holder, int position) {
             if (holder instanceof MyViewHolder) {
                 MyViewHolder viewHolder = (MyViewHolder) holder;
-                ItemBean bean = mData.get(position);
+                final ItemBean bean = mData.get(position);
                 if (bean.images == null) {
                     viewHolder.viewPager.setVisibility(View.GONE);
                     viewHolder.titleTv.setPadding(0, 0, 0, mTitlePaddingTop);
@@ -298,8 +310,23 @@ public class ItemsFragment extends Fragment implements ItemsContract.View, OnRef
                     viewHolder.titleTv.setPadding(0, mTitlePaddingTop, 0, mTitlePaddingTop);
                 }
 
-                //TODO ????
-                viewHolder.viewPager.setAdapter(new ImagePagerAdapter(bean.images));
+                viewHolder.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        String url = bean.url;
+                        Intent intent = new Intent(getContext(), GankDetailActivity.class);
+                        intent.putExtra(GankDetailActivity.EXTRA_URL, url);
+                        startActivity(intent);
+                    }
+                });
+
+                //TODO 1. 在主线程给图片设置占位符 2. 在IDLE时向下层提交异步任务
+                Log.d(TAG, "onBindViewHolder: mRecyclerViewBusy = " + mRecyclerViewBusy);
+                if (!mRecyclerViewBusy) {
+                    viewHolder.viewPager.setAdapter(new ImagePagerAdapter(bean.images));
+                } else {
+                    viewHolder.viewPager.setAdapter(null);
+                }
                 viewHolder.titleTv.setText(bean.desc);
                 if (!TextUtils.isEmpty(bean.who)) {
                     if (viewHolder.whoTv.getVisibility() != View.VISIBLE) {
@@ -333,6 +360,7 @@ public class ItemsFragment extends Fragment implements ItemsContract.View, OnRef
     }
 
     public class MyViewHolder extends RecyclerView.ViewHolder {
+        private View.OnClickListener mOnClickListener;
         @BindView(R.id.titleTv)
         TextView titleTv;
         @BindView(R.id.whoTv)
@@ -348,12 +376,13 @@ public class ItemsFragment extends Fragment implements ItemsContract.View, OnRef
             ButterKnife.bind(this, itemView);
         }
 
+        void setOnClickListener(View.OnClickListener onClickListener) {
+            mOnClickListener = onClickListener;
+        }
+
         @OnClick(R.id.container)
-        void startDetailActivity() {
-//            String url = mData.results.get(getAdapterPosition()).url;
-//            Intent intent = new Intent(getContext(), GankDetailActivity.class);
-//            intent.putExtra(GankDetailActivity.EXTRA_URL, url);
-//            startActivity(intent);
+        void onClick(View view) {
+            mOnClickListener.onClick(view);
         }
     }
 

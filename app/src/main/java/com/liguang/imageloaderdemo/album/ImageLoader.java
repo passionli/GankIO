@@ -150,10 +150,13 @@ public class ImageLoader {
         Bitmap bitmap = bitmapDrawable.getBitmap();
 
         if (Utils.hasKitKat()) {
+            //4.4以上分配的字节可能比实际的大
+            // 因为可能是复用的之前大的同类型 RGB_565 的Bitmap像素内存
             return bitmap.getAllocationByteCount();
         }
 
         if (Utils.hasHoneycombMR1()) {
+            //3.1以上
             return bitmap.getByteCount();
         }
         return bitmap.getRowBytes() * bitmap.getHeight();

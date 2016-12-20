@@ -12,6 +12,7 @@ import com.github.moduth.blockcanary.BlockCanary;
 import com.github.moduth.blockcanary.BlockCanaryContext;
 import com.liguang.imageloaderdemo.data.ItemsRepository;
 import com.liguang.imageloaderdemo.util.Injection;
+import com.squareup.leakcanary.LeakCanary;
 
 public class MyApplication extends Application {
     private static final String TAG = "MyApplication";
@@ -21,6 +22,12 @@ public class MyApplication extends Application {
     @Override
     public void onCreate() {
         super.onCreate();
+        if (LeakCanary.isInAnalyzerProcess(this)) {
+            // This process is dedicated to LeakCanary for heap analysis.
+            // You should not init your app in this process.
+            return;
+        }
+        LeakCanary.install(this);
         //Use it only in debug builds
         if (BuildConfig.DEBUG) {
             AndroidDevMetrics.initWith(this);

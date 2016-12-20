@@ -139,6 +139,7 @@ public class ItemsPresenter implements ItemsContract.Presenter {
                 mData = beanList;
                 mNewItemCount = beanList.size();
             } else {
+                //O(n^2) ?
                 for (ItemBean bean : beanList) {
                     if (!mData.contains(bean)) {
                         mData.add(bean);

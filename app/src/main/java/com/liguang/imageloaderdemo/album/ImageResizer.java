@@ -56,8 +56,10 @@ public class ImageResizer {
 
     public Bitmap decodeSampledBitmapFromFileDescriptor(FileDescriptor fd, int reqWidth, int reqHeight) {
         BitmapFactory.Options options = new BitmapFactory.Options();
+        //decode bounds first
         options.inJustDecodeBounds = true;
         BitmapFactory.decodeFileDescriptor(fd, null, options);
+        //计算缩放因子,
         options.inSampleSize = calculateInSampleSize(options, reqWidth, reqHeight);
         options.inJustDecodeBounds = false;
         //默认开启最小内存颜色模式
