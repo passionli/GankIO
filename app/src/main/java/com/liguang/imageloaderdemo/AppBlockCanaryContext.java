@@ -23,8 +23,8 @@ public class AppBlockCanaryContext extends BlockCanaryContext {
     public String provideQualifier() {
         String qualifier = "";
         try {
-            PackageInfo info = MyApplication.getAppContext().getPackageManager()
-                    .getPackageInfo(MyApplication.getAppContext().getPackageName(), 0);
+            PackageInfo info = GankIOApplication.getAppContext().getPackageManager()
+                    .getPackageInfo(GankIOApplication.getAppContext().getPackageName(), 0);
             qualifier += info.versionCode + "_" + info.versionName + "_passionli";
         } catch (PackageManager.NameNotFoundException e) {
             Log.e(TAG, "provideQualifier exception", e);
