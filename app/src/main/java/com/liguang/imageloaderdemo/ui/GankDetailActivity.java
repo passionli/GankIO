@@ -17,7 +17,9 @@ import com.liguang.imageloaderdemo.R;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.Unbinder;
+import hugo.weaving.DebugLog;
 
+@DebugLog
 public class GankDetailActivity extends AppCompatActivity {
     private static final String TAG = "GankDetailActivity";
     public static final String EXTRA_URL = "extra_url";
@@ -34,6 +36,11 @@ public class GankDetailActivity extends AppCompatActivity {
         setContentView(R.layout.activity_gank_detail);
         mUnbinder = ButterKnife.bind(this);
         initData(savedInstanceState);
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
         initView();
     }
 
@@ -64,6 +71,7 @@ public class GankDetailActivity extends AppCompatActivity {
         mUnbinder.unbind();
     }
 
+    @DebugLog
     private class MyWebViewClient extends WebViewClient {
         @Override
         public boolean shouldOverrideUrlLoading(WebView view, String url) {
@@ -80,6 +88,7 @@ public class GankDetailActivity extends AppCompatActivity {
         }
     }
 
+    @DebugLog
     private class MyWebChromeClient extends WebChromeClient {
         @Override
         public void onProgressChanged(WebView view, int newProgress) {
