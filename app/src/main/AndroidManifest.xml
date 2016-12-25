@@ -17,8 +17,7 @@
         android:theme="@style/AppTheme">
         <activity
             android:name=".ui.GankListActivity"
-            android:screenOrientation="portrait"
-            android:theme="@style/Animation.Activity.Translucent.Style.Main">
+            android:screenOrientation="portrait">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
