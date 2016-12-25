@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">ImageLoaderDemo</string>
+    <string name="app_name">GankIO</string>
 
     <string name="clear_cache_menu">Clear Caches</string>
     <string name="clear_cache_complete_toast">Caches have been cleared</string>

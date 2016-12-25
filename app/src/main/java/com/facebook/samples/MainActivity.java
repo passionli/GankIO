@@ -23,7 +23,7 @@ import android.view.MotionEvent;
 
 import com.facebook.samples.zoomable.AnimatedZoomableController;
 import com.facebook.samples.zoomable.ZoomableDraweeView;
-import com.liguang.imageloaderdemo.R;
+import com.liguang.gankio.R;
 
 public class MainActivity extends Activity {
 

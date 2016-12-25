@@ -6,7 +6,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.FrameLayout;
 
-import com.liguang.imageloaderdemo.R;
+import com.liguang.gankio.R;
 
 /**
  * Created by aspsine on 16/3/14.

@@ -22,9 +22,8 @@ import android.widget.FrameLayout;
 
 import com.facebook.drawee.backends.pipeline.Fresco;
 import com.facebook.drawee.interfaces.DraweeController;
-import com.facebook.samples.zoomable.ZoomableController;
 import com.facebook.samples.zoomable.ZoomableDraweeView;
-import com.liguang.imageloaderdemo.R;
+import com.liguang.gankio.R;
 
 class MyPagerAdapter extends PagerAdapter {
     private static final String TAG = "MyPagerAdapter";

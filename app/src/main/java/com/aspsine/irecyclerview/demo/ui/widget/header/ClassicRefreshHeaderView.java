@@ -10,7 +10,7 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import com.aspsine.irecyclerview.RefreshTrigger;
-import com.liguang.imageloaderdemo.R;
+import com.liguang.gankio.R;
 
 /**
  * Created by aspsine on 16/3/14.

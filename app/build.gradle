@@ -6,7 +6,7 @@ android {
     compileSdkVersion 24
     buildToolsVersion "25.0.0"
     defaultConfig {
-        applicationId "com.liguang.imageloaderdemo"
+        applicationId "com.liguang.gankio"
         minSdkVersion 17
         targetSdkVersion 24
         versionCode 1

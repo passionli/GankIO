@@ -4,7 +4,7 @@
     android:id="@+id/activity_gank_detail"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context="com.liguang.imageloaderdemo.ui.GankDetailActivity">
+    tools:context="com.liguang.gankio.ui.GankDetailActivity">
 
     <ProgressBar
         android:id="@+id/progressBar"
