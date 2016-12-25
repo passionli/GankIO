@@ -14,15 +14,19 @@ import com.github.moduth.blockcanary.BlockCanary;
 import com.github.moduth.blockcanary.BlockCanaryContext;
 import com.liguang.gankio.album.Utils;
 import com.liguang.gankio.data.ItemsRepository;
+import com.liguang.gankio.service.DataBootstrapService;
 import com.liguang.gankio.util.Injection;
 import com.liguang.gankio.util.LGLog;
 import com.squareup.leakcanary.LeakCanary;
+
+import hugo.weaving.DebugLog;
 
 public class GankIOApplication extends Application {
     private static final String TAG = "GankIOApplication";
     private static Context sAppContext;
     static BlockCanaryContext sBlockCanaryContext;
 
+    @DebugLog
     @Override
     public void onCreate() {
         super.onCreate();
@@ -31,12 +35,6 @@ public class GankIOApplication extends Application {
         setupFresco();
 //        setupBlockCanary();
         setupLowLevel();
-
-//        testPrintLooperMsg();
-        long maxMemory =
-                Runtime.getRuntime().maxMemory();
-        byte[] buffer = new byte[192 * 1024 * 1204];
-        Runtime.getRuntime().totalMemory();
     }
 
     private void testPrintLooperMsg() {
@@ -50,6 +48,7 @@ public class GankIOApplication extends Application {
     }
 
     private void setupLowLevel() {
+        DataBootstrapService.startDataBootstrap(getApplicationContext());
         ItemsRepository repository = Injection.provideItemsRepository(getApplicationContext());
         repository.setup();
     }

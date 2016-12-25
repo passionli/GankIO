@@ -4,8 +4,14 @@ import android.app.IntentService;
 import android.content.Context;
 import android.content.Intent;
 
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.util.IOUtils;
 import com.liguang.gankio.R;
+import com.liguang.gankio.bean.ItemListBean;
+import com.liguang.gankio.data.local.ItemsLocalDataSource;
+import com.liguang.gankio.util.PreferenceUtil;
 
+import java.io.IOException;
 import java.io.InputStream;
 
 /**
@@ -26,6 +32,8 @@ public class DataBootstrapService extends IntentService {
      * @see IntentService
      */
     public static void startDataBootstrap(Context context) {
+        if (PreferenceUtil.getInstance(context).isDataBootstrapDone())
+            return;
         Intent intent = new Intent(context, DataBootstrapService.class);
         intent.setAction(ACTION_DATA_BOOTSTRAP);
         context.startService(intent);
@@ -45,12 +53,35 @@ public class DataBootstrapService extends IntentService {
      * Handle action DataBootstrap in the provided background thread
      */
     private void handleActionDataBootstrap() {
+        if (PreferenceUtil.getInstance(this).isDataBootstrapDone())
+            return;
         //read done flag
         //doing? 由于是串行执行，故不可能出现running的情况
         //start DataBootstrap
         //load json to buffer
-//        InputStream is = getResources().openRawResource(R.raw.bootstrap);
-        //write buffer to db
-        //write done flag
+        //TODO rx java
+        InputStream is = getResources().openRawResource(R.raw.bootstrap);
+        byte[] buffer = new byte[40 * 1024];
+        int nRead = 0;
+        int off = 0;
+        try {
+            while ((nRead = is.read(buffer, off, 1024)) != -1) {
+                off += nRead;
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                is.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        //to bean obj
+        ItemListBean itemListBean = JSON.parseObject(buffer, 0, off, IOUtils.UTF8, ItemListBean.class);
+        ItemsLocalDataSource localDataSource = ItemsLocalDataSource.getInstance(getContentResolver());
+        localDataSource.saveItems(itemListBean.results);
+        //mark is done
+        PreferenceUtil.getInstance(this).setDataBootstrapDone();
     }
 }

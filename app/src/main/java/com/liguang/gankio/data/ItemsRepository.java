@@ -3,8 +3,10 @@ package com.liguang.gankio.data;
 import android.support.annotation.NonNull;
 import android.util.Log;
 
+import com.liguang.gankio.GankIOApplication;
 import com.liguang.gankio.bean.ItemBean;
 import com.liguang.gankio.config.AppConfig;
+import com.liguang.gankio.util.Utils;
 
 import java.util.List;
 import java.util.Map;
@@ -73,8 +75,16 @@ public class ItemsRepository implements ItemsDataSource {
         //remote
         Observable<List<ItemBean>> remoteItems = getAndSaveRemoteItems(tag, page);
 
-        if (mCacheIsDirty) {
-            return remoteItems;
+        //TODO
+//        if (mCacheIsDirty) {
+//            return remoteItems;
+//        }
+
+        boolean isNetworkAvailable = Utils.isNetworkAvailable(GankIOApplication.getAppContext());
+
+        if (!isNetworkAvailable) {
+            Log.d(TAG, "getItems: offline. just return local data");
+            return localItems;
         }
 
         if (page == 1) {

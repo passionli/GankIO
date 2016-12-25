@@ -6,6 +6,26 @@
         <item name="colorPrimary">@color/colorPrimary</item>
         <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
         <item name="colorAccent">@color/colorAccent</item>
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowAnimationStyle">@style/ActivityAnimTheme</item>
+    </style>
+
+    <style name="ActivityAnimTheme" parent="@android:style/Animation.Translucent">
+        <item name="android:activityOpenEnterAnimation">@anim/activity_right_in</item>
+        <item name="android:activityOpenExitAnimation">@anim/activity_left_out</item>
+        <item name="android:activityCloseEnterAnimation">@anim/activity_left_in</item>
+        <item name="android:activityCloseExitAnimation">@anim/activity_right_out</item>
+        <!--<item name="android:taskToBackEnterAnimation">@null</item>-->
+        <!--<item name="android:taskToBackExitAnimation">@null</item>-->
+    </style>
+
+    <style name="Animation.Activity.Translucent.Style.Main" parent="Theme.AppCompat.Light.DarkActionBar">
+        <item name="android:windowEnterAnimation">@anim/translucent_enter</item>
+        <item name="android:windowExitAnimation">@anim/activity_right_out</item>
+        <item name="colorPrimary">@color/colorPrimary</item>
+        <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
+        <item name="colorAccent">@color/colorAccent</item>
     </style>
 
     <style name="AppThemeDark" parent="android:Theme" />

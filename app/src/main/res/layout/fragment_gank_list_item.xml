@@ -1,21 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:fresco="http://schemas.android.com/apk/res-auto"
     android:id="@+id/container"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:padding="23dp">
 
-    <android.support.v4.view.ViewPager
-        android:id="@+id/viewPager"
+    <com.facebook.drawee.view.DraweeView
+        android:id="@+id/draweeView"
         android:layout_width="match_parent"
         android:layout_height="225dp"
-        android:background="#F2F4F7" />
+        fresco:fadeDuration="300"
+        fresco:failureImage="@mipmap/ic_error"
+        fresco:placeholderImage="@mipmap/ic_stub" />
 
     <TextView
         android:id="@+id/titleTv"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_below="@id/viewPager"
+        android:layout_below="@id/draweeView"
         android:ellipsize="end"
         android:maxLines="2"
         android:paddingBottom="23dp"

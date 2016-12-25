@@ -45,6 +45,8 @@ public class ItemsPresenter implements ItemsContract.Presenter {
     private List<ItemBean> mData;
     private int mNewItemCount;
 
+
+
     public ItemsPresenter() {
 
     }
@@ -70,6 +72,7 @@ public class ItemsPresenter implements ItemsContract.Presenter {
         if (forceUpdate) {
             //头部显示正在加载
             mView.showHeaderRefreshing();
+            mView.hideFooterLoading();
             mRepository.refreshItems();
         }
         if (mPage != 1) {

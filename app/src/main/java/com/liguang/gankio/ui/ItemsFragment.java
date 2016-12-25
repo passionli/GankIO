@@ -1,13 +1,13 @@
 package com.liguang.gankio.ui;
 
+import android.content.Context;
 import android.content.Intent;
+import android.database.ContentObserver;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
-import android.support.v4.view.PagerAdapter;
-import android.support.v4.view.ViewPager;
 import android.support.v7.widget.DividerItemDecoration;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -33,10 +33,12 @@ import com.facebook.drawee.view.DraweeView;
 import com.facebook.imagepipeline.common.ResizeOptions;
 import com.facebook.imagepipeline.request.ImageRequest;
 import com.facebook.imagepipeline.request.ImageRequestBuilder;
+import com.google.samples.apps.iosched.util.ThrottledContentObserver;
 import com.liguang.gankio.LGViewUtils;
 import com.liguang.gankio.R;
 import com.liguang.gankio.album.Utils;
 import com.liguang.gankio.bean.ItemBean;
+import com.liguang.gankio.db.GankIoContract;
 import com.liguang.gankio.network.URLHelper;
 import com.liguang.gankio.util.Injection;
 
@@ -49,8 +51,8 @@ import butterknife.OnClick;
 import butterknife.Unbinder;
 import hugo.weaving.DebugLog;
 
-@DebugLog
-public class ItemsFragment extends Fragment implements ItemsContract.View, OnRefreshListener, OnLoadMoreListener {
+public class ItemsFragment extends Fragment implements ItemsContract.View,
+        OnRefreshListener, OnLoadMoreListener, ThrottledContentObserver.Callbacks {
     private static final String TAG = "ItemsFragment";
     private static final String EXTRA_TAG = "extra_tag";
     @BindView(R.id.tvEmpty)
@@ -71,6 +73,8 @@ public class ItemsFragment extends Fragment implements ItemsContract.View, OnRef
     private CustomDividerDrawable mDividerDrawable;
     private boolean mRecyclerViewBusy;
 
+    private final ContentObserver mContentObserver = new ThrottledContentObserver(this);
+
     public ItemsFragment() {
     }
 
@@ -88,14 +92,20 @@ public class ItemsFragment extends Fragment implements ItemsContract.View, OnRef
     }
 
     @Override
+    public void onAttach(Context context) {
+        super.onAttach(context);
+//        PreferenceManager.getDefaultSharedPreferences(context).registerOnSharedPreferenceChangeListener(this);
+    }
+
+    @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Log.d(TAG, "onCreate: ");
         if (getArguments() != null) {
             String type = getArguments().getString(EXTRA_TAG);
-            mImageWidth = LGViewUtils.getScreenWidth(getContext()) - LGViewUtils.dp2px(getContext(), 46);
-            mImageHeight = LGViewUtils.dp2px(getContext(), 225);
-            mPresenter = new ItemsPresenter(getContext(), this, Injection.provideItemsRepository(getContext().getApplicationContext()),
+            mImageWidth = LGViewUtils.getScreenWidth(getActivity()) - LGViewUtils.dp2px(getActivity(), 46);
+            mImageHeight = LGViewUtils.dp2px(getActivity(), 225);
+            mPresenter = new ItemsPresenter(getActivity(), this, Injection.provideItemsRepository(getActivity().getApplicationContext()),
                     type);
         }
     }
@@ -104,14 +114,12 @@ public class ItemsFragment extends Fragment implements ItemsContract.View, OnRef
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        // Inflate the layout for this fragment
         return inflater.inflate(R.layout.fragment_item_list, container, false);
     }
 
     @Override
     public void setUserVisibleHint(boolean isVisibleToUser) {
         super.setUserVisibleHint(isVisibleToUser);
-        Log.d(TAG, "setUserVisibleHint: isVisibleToUser=" + isVisibleToUser);
         if (isVisibleToUser && isResumed()) {
             onVisible();
         }
@@ -122,7 +130,7 @@ public class ItemsFragment extends Fragment implements ItemsContract.View, OnRef
     public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
         mUnbinder = ButterKnife.bind(this, view);
         mDividerDrawable = new CustomDividerDrawable(Color.parseColor("#F2F4F7"));
-        mDividerDrawable.setIntrinsicHeight(LGViewUtils.dp2px(getContext(), 10));
+        mDividerDrawable.setIntrinsicHeight(LGViewUtils.dp2px(getActivity(), 10));
         mLayoutManager = new LinearLayoutManager(getActivity());
         mAdapter = new MyAdapter();
     }
@@ -140,12 +148,12 @@ public class ItemsFragment extends Fragment implements ItemsContract.View, OnRef
         mRecyclerView = (IRecyclerView) getView().findViewById(R.id.iRecyclerView);
         mRecyclerView.setLayoutManager(mLayoutManager);
         mLoadMoreFooterView = (LoadMoreFooterView) mRecyclerView.getLoadMoreFooterView();
+        mLoadMoreFooterView.setVisibility(View.GONE);
         mRecyclerView.setOnRefreshListener(this);
         mRecyclerView.setOnLoadMoreListener(this);
         mRecyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
             public int mLastState;
 
-            @DebugLog
             @Override
             public void onScrollStateChanged(RecyclerView recyclerView, int newState) {
                 if (newState == RecyclerView.SCROLL_STATE_IDLE || newState == RecyclerView.SCROLL_STATE_DRAGGING) {
@@ -192,14 +200,17 @@ public class ItemsFragment extends Fragment implements ItemsContract.View, OnRef
 
     @DebugLog
     private void onVisible() {
+        getActivity().getContentResolver().registerContentObserver(GankIoContract.Item.CONTENT_URI, false, mContentObserver);
         mPresenter.subscribe();
     }
 
     @Override
     public void onPause() {
         super.onPause();
-        if (getUserVisibleHint())
+        if (getUserVisibleHint()) {
             mPresenter.unsubscribe();
+            getActivity().getContentResolver().unregisterContentObserver(mContentObserver);
+        }
     }
 
     @Override
@@ -225,10 +236,10 @@ public class ItemsFragment extends Fragment implements ItemsContract.View, OnRef
 
     @Override
     public void hideHeaderRefreshing() {
+        initView();
         mRecyclerView.setRefreshing(false);
     }
 
-    @DebugLog
     @Override
     public void showItems(List<ItemBean> beanList) {
         mAdapter.swapData(beanList);
@@ -236,6 +247,7 @@ public class ItemsFragment extends Fragment implements ItemsContract.View, OnRef
 
     @Override
     public void showNoMoreItems() {
+        initView();
         mLoadMoreFooterView.setStatus(LoadMoreFooterView.Status.THE_END);
     }
 
@@ -248,7 +260,6 @@ public class ItemsFragment extends Fragment implements ItemsContract.View, OnRef
     @Override
     public void showRecyclerView() {
         mEmptyView.setVisibility(View.GONE);
-        initView();
     }
 
     @Override
@@ -266,6 +277,13 @@ public class ItemsFragment extends Fragment implements ItemsContract.View, OnRef
         mPresenter.loadItems(false);
     }
 
+    @DebugLog
+    @Override
+    public void onThrottledContentObserverFired() {
+        //reload data
+        mPresenter.loadItems(true);
+    }
+
     private class MyAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         private static final int TYPE_ITEM = 0;
         //        private static final int TYPE_FOOTER = 1;
@@ -274,8 +292,8 @@ public class ItemsFragment extends Fragment implements ItemsContract.View, OnRef
         public List<ItemBean> mData;
 
         public MyAdapter() {
-            mInflater = LayoutInflater.from(getContext());
-            mTitlePaddingTop = LGViewUtils.dp2px(getContext(), 23);
+            mInflater = LayoutInflater.from(getActivity());
+            mTitlePaddingTop = LGViewUtils.dp2px(getActivity(), 23);
             mData = new ArrayList<>();
         }
 
@@ -284,7 +302,6 @@ public class ItemsFragment extends Fragment implements ItemsContract.View, OnRef
             notifyDataSetChanged();
         }
 
-        @DebugLog
         @Override
         public RecyclerView.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
             if (viewType == TYPE_ITEM) {
@@ -296,17 +313,16 @@ public class ItemsFragment extends Fragment implements ItemsContract.View, OnRef
             return null;
         }
 
-        @DebugLog
         @Override
         public void onBindViewHolder(RecyclerView.ViewHolder holder, int position) {
             if (holder instanceof MyViewHolder) {
                 MyViewHolder viewHolder = (MyViewHolder) holder;
                 final ItemBean bean = mData.get(position);
                 if (bean.images == null) {
-                    viewHolder.viewPager.setVisibility(View.GONE);
+                    viewHolder.draweeView.setVisibility(View.GONE);
                     viewHolder.titleTv.setPadding(0, 0, 0, mTitlePaddingTop);
                 } else {
-                    viewHolder.viewPager.setVisibility(View.VISIBLE);
+                    viewHolder.draweeView.setVisibility(View.VISIBLE);
                     viewHolder.titleTv.setPadding(0, mTitlePaddingTop, 0, mTitlePaddingTop);
                 }
 
@@ -314,7 +330,7 @@ public class ItemsFragment extends Fragment implements ItemsContract.View, OnRef
                     @Override
                     public void onClick(View v) {
                         String url = bean.url;
-                        Intent intent = new Intent(getContext(), GankDetailActivity.class);
+                        Intent intent = new Intent(getActivity(), GankDetailActivity.class);
                         intent.putExtra(GankDetailActivity.EXTRA_URL, url);
                         startActivity(intent);
                     }
@@ -322,10 +338,27 @@ public class ItemsFragment extends Fragment implements ItemsContract.View, OnRef
 
                 //TODO 1. 在主线程给图片设置占位符 2. 在IDLE时向下层提交异步任务
                 Log.d(TAG, "onBindViewHolder: mRecyclerViewBusy = " + mRecyclerViewBusy);
-                if (!mRecyclerViewBusy) {
-                    viewHolder.viewPager.setAdapter(new ImagePagerAdapter(bean.images));
+                if (!mRecyclerViewBusy && bean.images != null) {
+                    Uri uri = Uri.parse(URLHelper.createImageUrlWithWidth(bean.images[0], mImageWidth));
+                    ImageRequest imageRequest = ImageRequestBuilder.newBuilderWithSource(uri)
+                            .setLocalThumbnailPreviewsEnabled(true)
+                            .setResizeOptions(new ResizeOptions(mImageWidth, mImageHeight)).build();
+                    DraweeController draweeController = Fresco.newDraweeControllerBuilder()
+                            .setOldController(((MyViewHolder) holder).draweeView.getController())
+                            .setImageRequest(imageRequest)
+                            .build();
+                    ((MyViewHolder) holder).draweeView.setController(draweeController);
+                    GenericDraweeHierarchyBuilder builder =
+                            new GenericDraweeHierarchyBuilder(getResources());
+                    //在代码中设置比在XML中设置有效，更多情况下请使用代码设置！
+                    GenericDraweeHierarchy hierarchy = builder
+                            .setFadeDuration(300)
+//                    .setPlaceholderImage(R.mipmap.thumb_picture_loading)
+                            .setFailureImage(R.mipmap.thumb_load_fail)
+                            .build();
+                    ((MyViewHolder) holder).draweeView.setHierarchy(hierarchy);
                 } else {
-                    viewHolder.viewPager.setAdapter(null);
+                    viewHolder.draweeView.setImageDrawable(null);
                 }
                 viewHolder.titleTv.setText(bean.desc);
                 if (!TextUtils.isEmpty(bean.who)) {
@@ -367,9 +400,8 @@ public class ItemsFragment extends Fragment implements ItemsContract.View, OnRef
         TextView whoTv;
         @BindView(R.id.publishedAtTv)
         TextView publishedAtTv;
-        @BindView(R.id.viewPager)
-        ViewPager viewPager;
-//        ImagePagerAdapter adapter;
+        @BindView(R.id.draweeView)
+        DraweeView draweeView;
 
         public MyViewHolder(View itemView) {
             super(itemView);
@@ -396,62 +428,6 @@ public class ItemsFragment extends Fragment implements ItemsContract.View, OnRef
 
         public FooterViewHolder(View view) {
             ButterKnife.bind(this, view);
-        }
-    }
-
-    private class ImagePagerAdapter extends PagerAdapter {
-        private String[] mImageUrls;
-        LayoutInflater mInflater;
-
-        public ImagePagerAdapter(String[] imageUrls) {
-            mInflater = LayoutInflater.from(getContext());
-            mImageUrls = imageUrls;
-        }
-
-        @Override
-        public int getCount() {
-            return mImageUrls == null ? 0 : mImageUrls.length;
-        }
-
-        @Override
-        public boolean isViewFromObject(View view, Object object) {
-            return view == object;
-        }
-
-        @DebugLog
-        @Override
-        public Object instantiateItem(ViewGroup container, int position) {
-            FrameLayout frameLayout = (FrameLayout) mInflater.inflate(R.layout.fragment_image_detail, null);
-            DraweeView draweeView = (DraweeView) frameLayout.findViewById(R.id.my_image_view);
-            draweeView.setLayoutParams(new FrameLayout.LayoutParams(mImageWidth,
-                    mImageHeight));
-//            Uri uri = Uri.parse("http://b.hiphotos.baidu.com/zhidao/pic/item/a6efce1b9d16fdfafee0cfb5b68f8c5495ee7bd8.jpg");
-            Uri uri = Uri.parse(URLHelper.createImageUrlWithWidth(mImageUrls[position], mImageWidth));
-            ImageRequest imageRequest = ImageRequestBuilder.newBuilderWithSource(uri)
-                    .setLocalThumbnailPreviewsEnabled(true)
-                    .setResizeOptions(new ResizeOptions(mImageWidth, mImageHeight)).build();
-            DraweeController draweeController = Fresco.newDraweeControllerBuilder()
-                    .setOldController(draweeView.getController())
-                    .setImageRequest(imageRequest)
-                    .build();
-            draweeView.setController(draweeController);
-            GenericDraweeHierarchyBuilder builder =
-                    new GenericDraweeHierarchyBuilder(getResources());
-            //在代码中设置比在XML中设置有效，更多情况下请使用代码设置！
-            GenericDraweeHierarchy hierarchy = builder
-                    .setFadeDuration(300)
-//                    .setPlaceholderImage(R.mipmap.thumb_picture_loading)
-                    .setFailureImage(R.mipmap.thumb_load_fail)
-                    .build();
-            draweeView.setHierarchy(hierarchy);
-
-            container.addView(frameLayout);
-            return frameLayout;
-        }
-
-        @Override
-        public void destroyItem(ViewGroup container, int position, Object object) {
-            container.removeView((View) object);
         }
     }
 }

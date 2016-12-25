@@ -13,10 +13,20 @@ import java.nio.channels.FileChannel;
 
 public class Utils {
 
-    private boolean isWifi(Context context) {
+    public static boolean isWifi(Context context) {
         ConnectivityManager cm = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
         NetworkInfo info = cm.getActiveNetworkInfo();
         return info != null && info.getType() == ConnectivityManager.TYPE_WIFI;
+    }
+
+    public static boolean isMobile(Context context) {
+        ConnectivityManager cm = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo info = cm.getActiveNetworkInfo();
+        return info != null && info.getType() == ConnectivityManager.TYPE_MOBILE;
+    }
+
+    public static boolean isNetworkAvailable(Context context) {
+        return isWifi(context) || isMobile(context);
     }
 
     public static final void copyDB2SDCard(Context context) {
@@ -45,6 +55,7 @@ public class Utils {
 
     /**
      * 转换数据库图片URL数组
+     *
      * @param string
      * @return
      */
