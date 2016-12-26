@@ -46,7 +46,6 @@ public class ItemsPresenter implements ItemsContract.Presenter {
     private int mNewItemCount;
 
 
-
     public ItemsPresenter() {
 
     }
@@ -79,10 +78,14 @@ public class ItemsPresenter implements ItemsContract.Presenter {
             mView.showFooterLoading();
         }
 
+        getItemsInternal(false);
+    }
+
+    private void getItemsInternal(boolean fromLocalOnly) {
         mSubscriptions.clear();
         mNewItemCount = 0;
         //下层负责创建Observable
-        Subscription subscription = mRepository.getItems(mType, mPage)
+        Subscription subscription = mRepository.getItems(mType, mPage, fromLocalOnly)
                 .flatMap(new Func1<List<ItemBean>, Observable<ItemBean>>() {
                     @Override
                     public Observable<ItemBean> call(List<ItemBean> beanList) {
@@ -131,6 +134,12 @@ public class ItemsPresenter implements ItemsContract.Presenter {
                     }
                 });
         mSubscriptions.add(subscription);
+    }
+
+    @Override
+    public void reloadItemsFromLocal() {
+        mPage = 1;
+        getItemsInternal(true);
     }
 
     private void processItems(List<ItemBean> beanList) {

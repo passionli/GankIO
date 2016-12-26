@@ -27,5 +27,6 @@ public class ItemsContract {
 
     interface Presenter extends BasePresenter {
         void loadItems(boolean forceUpdate);
+        void reloadItemsFromLocal();
     }
 }

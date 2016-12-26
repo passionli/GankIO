@@ -157,4 +157,10 @@ public class ItemsRepository implements ItemsDataSource {
             });
         }
     }
+
+    public Observable<List<ItemBean>> getItems(String type, int page, boolean fromLocalOnly) {
+        if (fromLocalOnly)
+            return mItemsLocalDataSource.getItems(type, page);
+        return getItems(type, page);
+    }
 }

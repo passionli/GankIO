@@ -281,7 +281,7 @@ public class ItemsFragment extends Fragment implements ItemsContract.View,
     @Override
     public void onThrottledContentObserverFired() {
         //reload data
-        mPresenter.loadItems(true);
+        mPresenter.reloadItemsFromLocal();
     }
 
     private class MyAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
