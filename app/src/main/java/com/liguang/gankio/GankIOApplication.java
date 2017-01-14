@@ -33,18 +33,8 @@ public class GankIOApplication extends Application {
         setupDebugMode();
         sAppContext = getApplicationContext();
         setupFresco();
-//        setupBlockCanary();
+        setupBlockCanary();
         setupLowLevel();
-    }
-
-    private void testPrintLooperMsg() {
-        Looper.getMainLooper().setMessageLogging(new Printer() {
-            @Override
-            public void println(String x) {
-//                Log.d(TAG, "println: " + x);
-//                LGLog.d(TAG, x);
-            }
-        });
     }
 
     private void setupLowLevel() {

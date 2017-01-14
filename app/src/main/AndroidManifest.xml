@@ -40,6 +40,13 @@
         <service
             android:name=".service.DataBootstrapService"
             android:exported="false"></service>
+
+        <meta-data
+            android:name="UMENG_APPKEY"
+            android:value="5878fcd11c5dd004a9000aaa" />
+        <meta-data
+            android:name="UMENG_CHANNEL"
+            android:value="dev" />
     </application>
 
 </manifest>
